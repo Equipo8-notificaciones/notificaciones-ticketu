@@ -1,0 +1,372 @@
+{
+  "info": {
+    "name": "Notificaciones - TicketU",
+    "_postman_id": "ticketu-notificaciones-collection",
+    "description": "Colección de pruebas de integración del módulo de Notificaciones (TITEC Evaluación 1 - CA2).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Servicios propios",
+      "item": [
+        {
+          "name": "1.1 GET /health - Estado del servicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve servicio=notificaciones', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.servicio).to.eql('notificaciones');",
+                  "});",
+                  "pm.test('Devuelve estado=OK', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.estado).to.eql('OK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica que el servicio de Notificaciones está operativo."
+          }
+        },
+        {
+          "name": "1.2 POST /api/notificaciones - Crear notificación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve id_notificacion', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id_notificacion');",
+                  "    pm.environment.set('notificacionId', json.id_notificacion);",
+                  "});",
+                  "pm.test('Estado inicial NO_LEIDA', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.estado).to.eql('NO_LEIDA');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\",\n  \"tipo\": \"COMPRA\",\n  \"titulo\": \"Notificación de prueba\",\n  \"mensaje\": \"Mensaje generado por Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones"]
+            },
+            "description": "Crea una notificación válida. El ID generado se guarda como variable de entorno."
+          }
+        },
+        {
+          "name": "1.3 GET /api/notificaciones?usuarioId - Listar notificaciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un arreglo', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "pm.test('Contiene al menos una notificación', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones?usuarioId={{usuarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones"],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "{{usuarioId}}"
+                }
+              ]
+            },
+            "description": "Lista las notificaciones del usuario autenticado."
+          }
+        },
+        {
+          "name": "1.4 GET /api/notificaciones/:id - Obtener por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve la notificación correcta', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id_notificacion).to.eql(pm.environment.get('notificacionId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/{{notificacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones", "{{notificacionId}}"]
+            },
+            "description": "Obtiene una notificación específica por su ID."
+          }
+        },
+        {
+          "name": "1.5 POST /api/notificaciones/:id/leida - Marcar como leída",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado cambia a LEIDA', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.estado).to.eql('LEIDA');",
+                  "});",
+                  "pm.test('Tiene fecha_lectura', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.fecha_lectura).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/{{notificacionId}}/leida",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones", "{{notificacionId}}", "leida"]
+            },
+            "description": "Marca una notificación como leída."
+          }
+        },
+        {
+          "name": "1.6 POST /api/notificaciones/marcar-todas-leidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un arreglo', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/marcar-todas-leidas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones", "marcar-todas-leidas"]
+            },
+            "description": "Marca todas las notificaciones del usuario como leídas."
+          }
+        },
+        {
+          "name": "1.7 DELETE /api/notificaciones/:id - Eliminar una",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado cambia a ELIMINADA', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.estado).to.eql('ELIMINADA');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/{{notificacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notificaciones", "{{notificacionId}}"]
+            },
+            "description": "Elimina (lógicamente) una notificación."
+          }
+        },
+        {
+          "name": "1.8 GET /api-docs/ - Swagger disponible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve HTML de Swagger', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('html');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-docs/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api-docs", ""]
+            },
+            "description": "Verifica que Swagger UI está publicado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Invocaciones a otros módulos",
+      "item": [
+        {
+          "name": "2.1 Auth - Obtener datos de usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Definición de invocación a Auth documentada', () => {",
+                  "    pm.expect(pm.request.url.toString()).to.include('/usuarios/');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{authUrl}}/usuarios/{{usuarioId}}",
+              "host": ["{{authUrl}}"],
+              "path": ["usuarios", "{{usuarioId}}"]
+            },
+            "description": "SIMULADO. El módulo Notificaciones invoca este servicio para obtener datos de usuario. Se evalúa la DEFINICIÓN, no que funcione."
+          }
+        },
+        {
+          "name": "2.2 Entradas - Obtener datos de evento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Definición de invocación a Entradas documentada', () => {",
+                  "    pm.expect(pm.request.url.toString()).to.include('/eventos/');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{entradasUrl}}/eventos/evento-test-001",
+              "host": ["{{entradasUrl}}"],
+              "path": ["eventos", "evento-test-001"]
+            },
+            "description": "SIMULADO. El módulo Notificaciones recibe datos de evento desde Entradas."
+          }
+        },
+        {
+          "name": "2.3 Panel - Estado de evento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Definición de invocación a Panel documentada', () => {",
+                  "    pm.expect(pm.request.url.toString()).to.include('/eventos/');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{panelUrl}}/eventos/evento-test-001/estado",
+              "host": ["{{panelUrl}}"],
+              "path": ["eventos", "evento-test-001", "estado"]
+            },
+            "description": "SIMULADO. El módulo Notificaciones recibe actualizaciones de estado desde el Panel Organizador."
+          }
+        }
+      ]
+    }
+  ]
+}

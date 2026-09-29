@@ -1,0 +1,43 @@
+{
+    "id": "ticketu-notificaciones-env",
+    "name": "Entorno Notificaciones (dev)",
+    "values":[
+        {
+            "key": "baseUrl",
+            "value": "https://studious-spoon-wjx679p4jg43gj5q-3000.app.github.dev",
+            "type": "default",
+            "enabled": true
+        },
+        {
+            "key": "authUrl",
+            "value": "http://localhost:3001",
+            "type": "default",
+            "enabled": true
+        },
+        {
+            "key": "entradasUrl",
+            "value": "http://localhost:3002",
+            "type": "default",
+            "enabled": true
+        },
+        {
+            "key": "panelUrl",
+            "value": "http://localhost:3003",
+            "type": "default",
+            "enabled": true
+        },
+        {
+            "key": "usuarioId",
+            "value": "user-test-001",
+            "type": "default",
+            "enabled": true
+        },
+        {
+            "key": "notificacionId",
+            "value": "",
+            "type": "default",
+            "enabled": true
+        }
+    ],
+    "_postman_variable_scope": "environment"
+}
