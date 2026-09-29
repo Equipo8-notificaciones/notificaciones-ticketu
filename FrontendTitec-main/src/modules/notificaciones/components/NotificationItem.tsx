@@ -75,9 +75,6 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
             <p className="detalle">{fecha_emision}</p>
           </>
         )}
-        {notificacion.datos.idEvento && (
-          <p className="detalle">Evento #{notificacion.datos.idEvento}</p>
-        )}
       </div>
 
       <style jsx>{`
