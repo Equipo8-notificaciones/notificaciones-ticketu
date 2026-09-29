@@ -1,0 +1,27 @@
+{
+  "name": "notificaciones-api",
+  "version": "1.0.0",
+  "description": "Backend del módulo de Notificaciones ",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --test",
+    "check": "node --check app.js"
+  },
+  "keywords": [
+    "notificaciones",
+    "express",
+    "microservicios"
+  ],
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
