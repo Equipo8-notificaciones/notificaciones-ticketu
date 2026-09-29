@@ -79,13 +79,13 @@ function calcularMomentoRecordatorio(fechaEvento) {
 }
 
 function validar(evento) {
-    if (!evento || evento.tipo !== 'entrada_emitida') {
-        throw new Error('Evento inválido: se esperaba tipo "entrada_emitida"');
+    if (!evento || evento.tipo !== 'entradas_emitidas') {
+        throw new Error('Evento inválido: se esperaba tipo "entradas_emitidas"');
     }
     const requeridos = ['id_usuario', 'id_evento', 'nombre_evento', 'fecha_evento', 'cantidad_entradas'];
     for (const campo of requeridos) {
         if (evento[campo] === undefined || evento[campo] === null) {
-            throw new Error(`Evento "entrada_emitida" inválido: falta el campo "${campo}"`);
+            throw new Error(`Evento "entradas_emitidas" inválido: falta el campo "${campo}"`);
         }
     }
     // fecha_emision es opcional

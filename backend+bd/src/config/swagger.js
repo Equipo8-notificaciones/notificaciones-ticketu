@@ -1,8 +1,8 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const { PORT } = require('./env');
 
-
 //Configuración de Swagger/OpenAPI para los servicios de Notificaciones
+
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -67,9 +67,9 @@ const options = {
                 EntradaEmitidaEvento: {
                     type: 'object',
                     description:
-                        'Evento asíncrono "entrada_emitida" enviado por Entradas a Notificaciones mediante broker. No es un endpoint HTTP.',
+                        'Evento asíncrono "entradas_emitidas" enviado por Entradas a Notificaciones',
                     properties: {
-                        tipo: { type: 'string', example: 'entrada_emitida' },
+                        tipo: { type: 'string', example: 'entradas_emitidas' },
                         id_usuario: { type: 'string', example: 'USR-123' },
                         id_evento: { type: 'integer', example: 45 },
                         nombre_evento: { type: 'string', example: 'Concierto Tini' },
@@ -79,7 +79,7 @@ const options = {
                             type: 'string',
                             format: 'date-time',
                             nullable: true,
-                            description: 'Campo opcional según el contrato.'
+                            description: 'Campo opcional'
                         }
                     }
                 },
@@ -87,72 +87,49 @@ const options = {
                 RecuperacionCuentaEvento: {
                     type: 'object',
                     description:
-                        'Evento asíncrono "recuperacion_cuenta" enviado por Auth a Notificaciones mediante broker.',
+                        'Evento asíncrono "recuperacion_cuenta" enviado por Auth a Notificaciones mediante broker (exchange "auth_events", routing key "recuperacion_cuenta").',
+                    required: ['Id_usuario', 'email_destino', 'url'],
                     properties: {
-                        tipo: { type: 'string', example: 'recuperacion_cuenta' },
-                        id_usuario: { type: 'string', example: 'USR-123' },
+                        Id_usuario: { type: 'string', example: 'USR-123' },
                         email_destino: { type: 'string', format: 'email', example: 'usuario@ejemplo.com' },
-                        url: { type: 'string', example: 'https://app.titec.cl/reset-password?token=...' },
-                        rol: {
-                            type: 'string',
-                            nullable: true,
-                            description: 'Opcional, según corresponda en el contrato actual.'
-                        }
+                        url: { type: 'string', example: 'https://app.titec.cl/reset-password?token=...' }
                     }
                 },
 
                 CuentaStaffEvento: {
                     type: 'object',
                     description:
-                        'Evento asíncrono "cuenta_staff" enviado por Auth a Notificaciones mediante broker.',
+                        'Evento asíncrono "cuenta_staff" enviado por Auth a Notificaciones mediante broker (exchange "auth_events", routing key "cuenta_staff").',
+                    required: ['email_destino', 'url'],
                     properties: {
-                        tipo: { type: 'string', example: 'cuenta_staff' },
-                        id_usuario: { type: 'string', example: 'USR-123' },
                         email_destino: { type: 'string', format: 'email', example: 'staff@ejemplo.com' },
-                        url: { type: 'string', example: 'https://app.titec.cl/activar-cuenta?token=...' },
-                        rol: {
-                            type: 'string',
-                            nullable: true,
-                            description: 'Opcional, según corresponda en el contrato actual.'
-                        }
+                        url: { type: 'string', example: 'https://app.titec.cl/activar-cuenta?token=...' }
                     }
                 },
 
                 PanelEventoActualizadoEvento: {
                     type: 'object',
                     description:
-                        'Evento asíncrono "panel.evento.actualizado" enviado por Panel a Notificaciones mediante broker.',
+                        'Evento asíncrono "evento_actualizado" enviado por Panel a Notificaciones mediante broker.',
+                    required: ['tipo', 'id_evento', 'nuevo_estado'],
                     properties: {
-                        tipo: { type: 'string', example: 'evento_actualizado' },
-                        id_evento: { type: 'integer', example: 45 },
+                        tipo: {
+                            type: 'string',
+                            example: 'evento_actualizado'
+                        },
+                        id_evento: {
+                            type: 'integer',
+                            example: 45
+                        },
                         nuevo_estado: {
                             type: 'string',
                             enum: ['cancelado', 'reprogramado', 'finalizado', 'borrador'],
                             example: 'cancelado'
                         },
-                        fecha_cambio: { type: 'string', format: 'date-time', nullable: true }
-                    }
-                },
-
-                AuthResultadoNotificacion: {
-                    type: 'object',
-                    description:
-                        'Resultado de envío publicado por Notificaciones hacia Auth mediante broker.',
-                    properties: {
-                        email_destino: {
+                        fecha_cambio: {
                             type: 'string',
-                            format: 'email',
-                            example: 'usuario@ejemplo.com'
-                        },
-                        estado_envio: {
-                            type: 'string',
-                            enum: ['exitoso', 'error'],
-                            example: 'exitoso'
-                        },
-                        error_envio: {
-                            type: 'string',
-                            nullable: true,
-                            example: 'No fue posible enviar el correo'
+                            format: 'date-time',
+                            nullable: true
                         }
                     }
                 },
