@@ -81,6 +81,10 @@ O directamente:
 
 ## Evidencia de ejecución
 
-_(Insertar captura de pantalla de `npm test` con los 30 tests pasando)_
+Capturas de la ejecución de `npm test` con los 30 tests pasando.
+
+![Evidencia 1](./evidencia/evidencia-tests-1.png)
+![Evidencia 2](./evidencia/evidencia-tests-2.png)
+![Evidencia 3](./evidencia/evidencia-tests-3.png)
 
 Resultado: 30/30 pruebas de funcionalidad pasando.
