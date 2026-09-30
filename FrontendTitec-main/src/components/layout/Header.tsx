@@ -10,12 +10,5 @@
 // su propia página mientras se define el diseño final del header.
 
 export default function Header() {
-  return (
-    <header style={{ padding: "1rem 2rem", borderBottom: "1px solid #e5e5e5" }}>
-      <nav style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-        <strong>Plataforma de Eventos</strong>
-        {/* TODO (equipo Platform + 9 grupos): definir logo y links finales */}
-      </nav>
-    </header>
-  );
+  return null;
 }

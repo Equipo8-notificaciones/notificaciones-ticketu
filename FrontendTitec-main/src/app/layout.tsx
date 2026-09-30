@@ -9,10 +9,10 @@ import type { ReactNode } from "react";
 //
 // Los 9 grupos no deberían necesitar tocar este archivo.
 
-export const metadata = {
+/*export const metadata = {
   title: "Plataforma de Eventos",
   description: "Proyecto universitario — plataforma de gestión de eventos",
-};
+};*/
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

@@ -1,4 +1,18 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, -apple-system, sans-serif; color: #111; }
+/* Fondo temporal */
+html {
+  min-height: 100%;
+  background-image: url("../modules/notificaciones/components/fondoTemporal.jpeg");
+	background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+body {
+	margin: 0;
+	min-height: 100vh;
+	font-family: system-ui, -apple-system, sans-serif;
+	color: #111;
+}
 main { padding: 2rem; min-height: 60vh; }
-a { color: #111; }
+a { color: #111; } 

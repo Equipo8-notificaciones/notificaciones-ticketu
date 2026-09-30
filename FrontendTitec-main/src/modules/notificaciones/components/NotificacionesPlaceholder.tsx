@@ -63,16 +63,11 @@ export default function NotificacionesPlaceholder() {
       <style jsx>{`
         .notificaciones-container {
           position: fixed;
-          top: 78px;
-          right: 24px;
+          /* fondoTemporal.jpeg is 1593x900. MC avatar: x=1509..1549, y=13..54 (41x42px). Bell target: x=1458..1498, y=13..54, leaving 10px between them. */
+          top: 1.444vh;
+          right: 5.901vw;
           z-index: 1000;
           font-family: ${notificaciones_design.tipografia_interfaz};
-        }
-
-        @media (max-width: 640px) {
-          .notificaciones-container {
-            right: 16px;
-          }
         }
       `}</style>
     </div>

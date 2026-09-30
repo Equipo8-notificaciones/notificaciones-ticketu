@@ -30,8 +30,8 @@ export default function NotificationButton({
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-          <path d="M10 21h4" />
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
 
         {cantidad_no_leidas > 0 && (
@@ -42,22 +42,21 @@ export default function NotificationButton({
       <style jsx>{`
         .boton-notificaciones {
           position: relative;
-          width: 44px;
-          height: 44px;
-          padding: 0;
-          border: 1px solid ${notificaciones_design.color_borde};
-          border-radius: 50%;
-          background: ${notificaciones_design.color_superficie};
-          cursor: pointer;
           display: flex;
-          color: ${notificaciones_design.color_texto_primario};
-          justify-content: center;
           align-items: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          justify-content: center;
+          width: 2.574vw;
+          height: 4.667vh;
+          padding: 0;
+          border: 1.5px solid rgba(255, 255, 255, 0.35);
+          border-radius: 50%;
+          background-color: transparent;
+          color: #ffffff;
+          cursor: pointer;
         }
 
         .boton-notificaciones:hover {
-          background: ${notificaciones_design.color_fondo_panel};
+          background-color: rgba(255, 255, 255, 0.1);
         }
 
         .boton-notificaciones:focus-visible {
@@ -66,22 +65,23 @@ export default function NotificationButton({
         }
 
         .campana {
-          width: 20px;
-          height: 20px;
+          width: 1.256vw;
+          height: 2.222vh;
         }
 
         .contador {
           position: absolute;
-          top: -5px;
-          right: -5px;
-          min-width: 20px;
-          height: 20px;
-          padding: 0 5px;
-          border-radius: 999px;
-          background: ${notificaciones_design.color_peligro_texto};
+          top: -4px;
+          right: -4px;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 4px;
+          border: 2px solid #2f4374;
+          border-radius: 50%;
+          background-color: #b3261e;
           color: #ffffff;
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 700;
           display: flex;
           align-items: center;
           justify-content: center;
