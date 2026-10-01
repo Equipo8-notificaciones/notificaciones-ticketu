@@ -6,7 +6,7 @@
 
 ---
 
-# 1. Propósito
+## 1. Propósito
 Notificaciones necesita conocer los cambios relevantes en el estado de un evento
 (modificaciones y cancelaciones) para informar oportunamente a los usuarios que poseen
 entradas activas. Panel Organizador publica un evento cuando un organizador cancela o
@@ -15,6 +15,7 @@ modifica el estado de un evento.
 ---
 
 ## 2. Operación: Publicar evento evento_actualizado
+
 ### 2.1 Descripción
 Publica un evento cuando el estado de un evento cambia y los asistentes deben ser
 informados.
