@@ -6,6 +6,8 @@
 // Placeholder funcional mientras se define el diseño final.
 
 export default function Footer() {
+  return null;
+
   /*return (
     <footer style={{ padding: "1.5rem 2rem", borderTop: "1px solid #e5e5e5", marginTop: "3rem" }}>
       <p style={{ fontSize: "0.85rem", color: "#666" }}>

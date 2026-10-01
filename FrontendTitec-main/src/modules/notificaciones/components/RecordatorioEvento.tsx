@@ -5,6 +5,13 @@ type RecordatorioEventoProps = {
   notificacion: Notificacion;
 };
 
+function formatearFechaEvento(fechaEvento: string) {
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(fechaEvento);
+  if (isoMatch) return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+
+  return fechaEvento;
+}
+
 export default function RecordatorioEvento({
   notificacion,
 }: RecordatorioEventoProps) {
@@ -24,7 +31,7 @@ export default function RecordatorioEvento({
         )}
         {typeof notificacion.datos.fechaEvento === "string" && (
           <p className="notificacion-detalle">
-            Fecha del evento: {notificacion.datos.fechaEvento}
+            Fecha del evento: {formatearFechaEvento(notificacion.datos.fechaEvento)}
           </p>
         )}
         {typeof notificacion.datos.horaEvento === "string" && (

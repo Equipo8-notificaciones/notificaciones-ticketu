@@ -20,19 +20,29 @@ export default function NotificacionesPlaceholder() {
   useEffect(() => {
     const atributo_controlador = new AbortController();
 
-    obtener_notificaciones(usuarioId, atributo_controlador.signal)
-      .then((atributo_resultado) => {
-        establecer_notificaciones(atributo_resultado);
-        establecer_error(false);
-      })
-      .catch((atributo_error_carga: Error) => {
-        if (atributo_error_carga.name !== "AbortError") {
-          establecer_error(true);
-        }
-      })
-      .finally(() => establecer_cargando(false));
+    const cargar_notificaciones = () => {
+      obtener_notificaciones(usuarioId, atributo_controlador.signal)
+        .then((atributo_resultado) => {
+          establecer_notificaciones(atributo_resultado);
+          establecer_error(false);
+        })
+        .catch((atributo_error_carga: Error) => {
+          if (atributo_error_carga.name !== "AbortError") {
+            establecer_error(true);
+          }
+        })
+        .finally(() => establecer_cargando(false));
+    };
 
-    return () => atributo_controlador.abort();
+    cargar_notificaciones();
+    const atributo_intervalo = window.setInterval(cargar_notificaciones, 5000);
+    window.addEventListener("focus", cargar_notificaciones);
+
+    return () => {
+      atributo_controlador.abort();
+      window.clearInterval(atributo_intervalo);
+      window.removeEventListener("focus", cargar_notificaciones);
+    };
   }, []);
 
   const cantidad_no_leidas = atributo_notificaciones.filter(
