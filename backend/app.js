@@ -1,3 +1,11 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const envPath = process.env.DOTENV_CONFIG_PATH || path.join(
+    __dirname,
+    fs.existsSync(path.join(__dirname, '.env')) ? '.env' : 'gabi.env'
+);
+require('dotenv').config({ path: envPath });
+
 const express = require('express');
 const { PORT } = require('./src/config/env');
 const cors = require('cors');

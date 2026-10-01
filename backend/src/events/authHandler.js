@@ -2,29 +2,26 @@ const notificacionService = require('../services/notificacionService');
 const emailService = require('../services/emailService');
 const broker = require('../broker');
 
-//Procesa los eventos publicados por Auth
+//Procesa los eventos publicados por Auth para generar y enviar notificaciones.
 async function manejarRecuperacionCuenta(evento) {
     return procesarEventoAuth(evento, 'recuperacion_cuenta', 'Restablecer contraseña');
 }
 
-
-//Procesa el evento de creación de cuenta Staff
-async function manejarCuentaStaff(evento) {
-    return procesarEventoAuth(evento, 'cuenta_staff', 'Cuenta creada de Staff');
+async function manejarCrearCuenta(evento) {
+    return procesarEventoAuth(evento, 'crear_cuenta', 'Cuenta creada de Staff');
 }
 
 async function procesarEventoAuth(evento, tipoEsperado, tituloNotificacion) {
     validar(evento, tipoEsperado);
 
-    const { id_usuario: usuarioId, email_destino: emailDestino, url, rol } = evento;
+    const { id_usuario: usuarioId, email_destino: emailDestino, url } = evento;
 
     const notificacion = await notificacionService.crearNotificacion({
         usuarioId: String(usuarioId),
         tipo: 'RECUPERACION_PASSWORD',
         titulo: tituloNotificacion,
         mensaje: `${tituloNotificacion}: ${url}`,
-        // Conserva el rol cuando el evento lo incluye.
-        datos: rol !== undefined ? { url, rol } : { url }
+        datos: { url }
     });
 
     try {
@@ -60,4 +57,4 @@ function validar(evento, tipoEsperado) {
     }
 }
 
-module.exports = { manejarRecuperacionCuenta, manejarCuentaStaff };
+module.exports = { manejarRecuperacionCuenta, manejarCrearCuenta };
