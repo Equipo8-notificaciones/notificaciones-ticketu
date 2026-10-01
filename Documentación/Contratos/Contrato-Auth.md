@@ -100,6 +100,8 @@ registrará el error correspondiente.
 El evento debe ser publicado por Auth inmediatamente después de procesar la solicitud de
 recuperación, ≤ 5 segundos hasta que Auth recibe confirmación de envío.
 
+---
+
 ## 3. Reglas de uso (lado consumidor)
 * **recuperacion_cuenta:**
 1. Notificaciones permanece suscrito al evento recuperacion_cuenta.
@@ -112,19 +114,24 @@ recuperación, ≤ 5 segundos hasta que Auth recibe confirmación de envío.
 2. Genera y envía el correo utilizando la información recibida.
 3. Si el envío falla, realiza hasta 3 intentos y registra el error si todos fallan.
 4. Notifica a Auth si él envió se realizó de forma correcta o incorrecta.
-4. Versionado y cambios
 
-> [!NOTE]
-> * Cualquier cambio en la estructura del evento debe ser versionado y comunicado con
+---
+
+## 4. Versionado y cambios
+* Cualquier cambio en la estructura del evento debe ser versionado y comunicado con
 anticipación.
->* Cambios que rompan compatibilidad (breaking changes) requieren un período de
+* Cambios que rompan compatibilidad (breaking changes) requieren un período de
 transición acordado entre ambos equipos.
+
+---
 
 ## 5. Dueños del contrato
 | Rol | Equipo | Contacto |
 | :--- | :--- | :--- |
-|Dueño del contrato | Auth | Diego Peña |
+| Dueño del contrato | Auth | Diego Peña |
 | Consumidor principal | Notificaciones | Gabriela Herrera |
+
+---
 
 ## 6. Pendientes a acordar (OPCIONAL PREVIO ACUERDO)
 - [ ] Confirmar SLA de tiempo de respuesta.
