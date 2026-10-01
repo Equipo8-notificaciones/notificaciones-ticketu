@@ -77,6 +77,8 @@ Se enviá de forma asincona mediante un evento, en caso de error (datos faltante
  
 ### 2.8 Tiempo de respuesta esperado (SLA) 
 < 200 ms, considerando solamente la recepción y encolamiento de la solicitud. 
+
+---
   
 ## 3. Reglas de uso (lado consumidor) 
 1. Notificaciones permanece suscrito al evento de entradas_emitidas. 
@@ -84,16 +86,22 @@ Se enviá de forma asincona mediante un evento, en caso de error (datos faltante
 3. Envía el correo con el ticket utilizando la información recibida. 
 4. Si el envío falla, realiza hasta 3 intentos y registra el error si todos fallan. 
 5. La confirmación del envío exitoso o fallido del correo es opcional.
-  
+
+---
+
 ## 4. Versionado y cambios 
 *	Cualquier modificación en la estructura del request o response debe generar un cambio de versión del contrato. 
 *	Los cambios que agreguen eliminen o modifiquen campos deben ser comunicados previamente entre ambos equipos. 
+
+---
 
 ## 5. Dueños del contrato 
 | Rol | Equipo | Contacto |
 | :--- | :--- | :--- |
 | Dueño del contrato |	Entradas |	Sebastián Fuentes |
 | Consumidor principal |	Notificaciones |	Gabriela Herrera |
+
+---
   
 ## 6. Pendientes a acordar (OPCIONAL PREVIO ACUERDO) 
 Ya acordado
