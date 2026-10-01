@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notificacionService = require('../services/notificacionService');
+const { manejarEntradaEmitida } = require('../events/entradaEmitidaHandler');
 
 /**
  * @swagger
@@ -35,6 +36,15 @@ router.post('/', async (req, res) => {
         res.status(201).json(notificacion);
     } catch (error) {
         res.status(400).json({ error: 'Error al crear notificación', detalle: error.message });
+    }
+});
+
+router.post('/probar-entradas', async (req, res) => {
+    try {
+        const resultado = await manejarEntradaEmitida({ ...req.body, tipo: 'entradas_emitidas' });
+        res.status(201).json(resultado);
+    } catch (error) {
+        res.status(400).json({ error: 'Error al procesar datos de Entradas', detalle: error.message });
     }
 });
 
