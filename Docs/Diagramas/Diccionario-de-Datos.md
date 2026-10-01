@@ -30,8 +30,6 @@ Almacena los datos enviados por **Equipo Auth**, funciona de manera aislada del 
 | `created_at` | `TIMESTAMPTZ` | **NOT NULL** | - | `NOW()` | Fecha y hora de creación del evento de autenticacion. |
 | `procesado_at` | `TIMESTAMPTZ` | **NULLABLE** | - | `NULL` | Fecha y hora en que el evento de autenticacion fue procesado. |
 
----
-
 ### 3.2 Tabla: `entradas_evento`
 * **Descripción:** Almacena los datos enviados por el **Equipo Entradas** referentes a la compra de entradas e interactúa con **Equipo Panel** para el cancelamiento o cambio de fecha/hora de un evento.
 
@@ -50,8 +48,6 @@ Almacena los datos enviados por **Equipo Auth**, funciona de manera aislada del 
 | `created_at` | `TIMESTAMPTZ` | **NOT NULL** | - | `NOW()` | Fecha y hora de creación del registro. |
 | `updated_at` | `TIMESTAMPTZ` | **NOT NULL** | - | `NOW()` | Fecha y hora de última actualización del registro. |
 
----
-
 ### 3.3 Tabla: `notificacion`
 * **Descripción:** Estructura de la notificación que será implementada en la app.
 
@@ -66,8 +62,6 @@ Almacena los datos enviados por **Equipo Auth**, funciona de manera aislada del 
 | `fecha_lectura` | `TIMESTAMPTZ` | **NULLABLE** | - | `NULL` | Fecha y hora en que la notificación fue leída. |
 | `fecha_eliminacion` | `TIMESTAMPTZ` | **NULLABLE** | - | `NULL` | Fecha y hora en que la notificación fue eliminada. |
 | `created_at` | `TIMESTAMPTZ` | **NOT NULL** | - | `NOW()` | Fecha y hora de creación de la notificación. |
-
----
 
 ### 3.3 Tabla: `envios_notificacion`
 * **Descripción:** Estructura de la notificación que será implementada en la app.
