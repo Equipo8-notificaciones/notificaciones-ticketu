@@ -47,8 +47,8 @@ Evento: evento_reprogramado
 | `id_evento` | `string` | Sí | Identificador del evento modificado. |
 | `id_usuario` | `string` | Sí | Identificador de quién cambio el estado del evento (cuenta tipo staff). |
 | `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `publicado`. |
-| `fecha_evento` | `timestamptz` | Sí | Fecha en que será cambiado el evento. |
-| `hora_evento` | `timestamptz` | Sí | Hora en que será cambiado el evento. |
+| `fecha_cambio` | `timestamptz` | Sí | Fecha en que será cambiado el evento. |
+| `hora_cambio` | `timestamptz` | Sí | Hora en que será cambiado el evento. |
 
 Ejemplo:
 * evento_actualizado:
@@ -59,7 +59,8 @@ Ejemplo:
   "nuevo_estado": "PUBLICADO",
   "fecha_evento": "2026-10-20",
   "hora_evento": "21:00",
-  "fecha_cambio": "2026-09-13T20:00:00"
+  "fecha_cambio": "2026-09-13"
+  "hora_cambio": "00:00:00"
 }
 ```
 
