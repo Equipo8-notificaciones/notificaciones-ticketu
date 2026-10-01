@@ -32,43 +32,67 @@ que debe ser comunicado a los asistentes.
 (Comunicación vía broker de mensajes asíncrono).
 
 ### 2.5 Request (lo que se envía)
+Exchange: panel.evento.notificaciones.v1
+
+Evento: evento_actualizado
 | Campo | Tipo | Obligatorio | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id_evento` | `integer` | Sí | Identificador del evento modificado. |
-| `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `reprogramado`. |
-| `fecha_cambio` | `timestamptz` | No | Fecha y hora en que se realizó el cambio del evento (en el caso que sea reprogramado) |
+| `id_evento` | `string` | Sí | Identificador del evento modificado. |
+| `id_usuario` | `string` | Sí | Identificador de quién cambio el estado del evento (cuenta tipo staff). |
+| `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `publicado`. |
+
+Evento: evento_reprogramado
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id_evento` | `string` | Sí | Identificador del evento modificado. |
+| `id_usuario` | `string` | Sí | Identificador de quién cambio el estado del evento (cuenta tipo staff). |
+| `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `publicado`. |
+| `fecha_evento` | `timestamptz` | Sí | Fecha en que será cambiado el evento. |
+| `hora_evento` | `timestamptz` | Sí | Hora en que será cambiado el evento. |
 
 Ejemplo:
 * evento_actualizado:
-
 ```
 {
- "id_evento": 45,
- "nuevo_estado": "reprogramado",
- "fecha_cambio": "2026-09-13T:20:00:00",
+  "id_evento": "evt-001",
+  "id_usuario": "usr-001",
+  "nuevo_estado": "PUBLICADO",
+  "fecha_evento": "2026-10-20",
+  "hora_evento": "21:00",
+  "fecha_cambio": "2026-09-13T20:00:00"
+}
+```
+
+Ejemplo:
+* evento_reprogramado:
+```
+{
+  "id_evento": "evt-001",
+  "id_usuario": "usr-001",
+  "nuevo_estado": "CANCELADO",
+  "fecha_cambio": "2026-09-13T20:00:00"
 }
 ```
 
 ### 2.6 Response (lo que se recibe)
+Notificaciones informa el resultado directamente al organizador, mediante su propio sistema de notificaciones.
+
 | Campo | Tipo | Obligatorio | Descripción |
 | :--- | :--- | :--- | :--- |
-| `Id_evento` `integer` Sí Identificador del evento afectado.
-| `estado_envio` | `string` | Sí | Resultado del proceso de envío. Puede ser `exitoso` o `error`. |
+| `id_evento` | `string` | Sí | Identificador del evento afectado. |
+| `id_usuario` | `string` | Sí | Identificador de quien cambió el estado del evento. |
+| `nuevo_estado` | `string` | Sí | Resultado del proceso de envío. Puede ser `exitoso` o `error`. |
 | `usuarios_notificados` | `integer` | Cantidad de usuarios a los que se envió la notificación correctamente. |
 | `usuarios_faltantes` | `integer` | Cantidad de usuarios a los que se les pudo enviar la notificación correctamente. |
 | `fecha_envio` | `timestamptz` | Fecha y hora en que finalizó el proceso de envío. |
-| `mensaje` | `string` | Mensaje informativo sobre el resultado del envío. |
 
-Ejemplo:
+Ejemplo de notificación al organizador:
 ```
-{
- "id_evento": 45,
- "estado_envio": "exitoso",
- "usuarios_notificados": 155,
- "usuarios_faltantes": 0,
- "fecha_envio": "2026-09-13T:20:00:00",
- "mensaje": "Envió realizado correctamente"
-}
+Evento actualizado
+El estado del evento ha sido actualizado correctamente.
+Usuarios notificados: 150
+Usuarios no notificados: 0
+Fecha de envío: 1 de octubre de 2026, 13:30
 ```
 
 >[!NOTE]
