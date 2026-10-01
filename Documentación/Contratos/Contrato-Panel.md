@@ -56,11 +56,7 @@ Ejemplo:
 {
   "id_evento": "evt-001",
   "id_usuario": "usr-001",
-  "nuevo_estado": "PUBLICADO",
-  "fecha_evento": "2026-10-20",
-  "hora_evento": "21:00",
-  "fecha_cambio": "2026-09-13"
-  "hora_cambio": "00:00:00"
+  "nuevo_estado": "CANCELADO",
 }
 ```
 
@@ -70,8 +66,9 @@ Ejemplo:
 {
   "id_evento": "evt-001",
   "id_usuario": "usr-001",
-  "nuevo_estado": "CANCELADO",
-  "fecha_cambio": "2026-09-13T20:00:00"
+  "nuevo_estado": "PUBLICADO",
+  "fecha_cambio": "2026-09-13"
+  "hora_cambio": "00:00:00"
 }
 ```
 
