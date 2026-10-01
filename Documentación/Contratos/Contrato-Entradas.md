@@ -1,5 +1,5 @@
-# Contrato de interfaz:  ↔ Notificaciones 
-* **Versión:** 3
+# Contrato de interfaz: Entradas ↔ Notificaciones 
+* **Versión:** 3.0
 * **Equipo consumidor:** Notificaciones 
 * **Equipo proveedor:** Entradas 
 * **Basado en:** HU1 - Recibir notificación de compra 
