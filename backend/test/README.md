@@ -19,14 +19,15 @@ O directamente:
 ## Estructura
 
     backend/test/
-        - service.test.js     (13 tests - lógica de negocio)
-        - handler.test.js     (6 tests - handlers de eventos)
+        - service.test.js     (15 tests - lógica de negocio)
+        - handler.test.js     (10 tests - handlers de eventos)
         - routes.test.js      (11 tests - rutas REST)
         - README.md           (este archivo)
+        - evidencia/          (capturas de ejecución)
 
 ## Casos de prueba
 
-### service.test.js - Lógica de negocio (13 tests)
+### service.test.js - Lógica de negocio (15 tests)
 
 | # | Descripción |
 |---|-------------|
@@ -43,8 +44,10 @@ O directamente:
 | 11 | eliminarVarias rechaza arreglos vacíos |
 | 12 | enviarConReintentos éxito al primer intento |
 | 13 | enviarConReintentos falla tras 3 intentos |
+| 14 | enviarConReintentos: éxito al segundo intento (2 llamadas) |
+| 15 | obtenerCentro devuelve ordenado por fecha descendente |
 
-### handler.test.js - Handlers de eventos (6 tests)
+### handler.test.js - Handlers de eventos (10 tests)
 
 | # | Descripción |
 |---|-------------|
@@ -54,6 +57,10 @@ O directamente:
 | 4 | Publica al tópico interno de correo |
 | 5 | Ignora mensaje sin id_notificacion |
 | 6 | Procesa mensaje de envío válido |
+| 7 | encola el correo exactamente 1 vez por evento |
+| 8 | Recordatorio: momento 24H_ANTES si el evento es > 24h | 
+| 9 | Recordatorio: momento INMEDIATO si el evento es < 24h |
+| 10 | Recordatorio: momento INMEDIATO si el evento ya ocurrió |
 
 ### routes.test.js - Rutas REST (11 tests)
 
@@ -71,20 +78,24 @@ O directamente:
 | 10 | DELETE /:id elimina |
 | 11 | DELETE con array de ids elimina varias |
 
-**Total: 30 tests**
+**Total: 36 tests**
 
 ## Resultado esperado
 
-    tests 30
-    pass 30
+    tests 36
+    pass 36
     fail 0
 
 ## Evidencia de ejecución
 
-Capturas de la ejecución de `npm test` con los 30 tests pasando.
+Capturas de la ejecución de `npm test` con los 36 tests pasando.
 
-![Evidencia 1](./evidencia/evidencia-tests-1.png)
-![Evidencia 2](./evidencia/evidencia-tests-2.png)
-![Evidencia 3](./evidencia/evidencia-tests-3.png)
+![Evidencia 1](./evidencia/EvidenciaTest01.png)
+![Evidencia 2](./evidencia/EvidenciaTest02.png)
+![Evidencia 3](./evidencia/EvidenciaTest03.png)
 
-Resultado: 30/30 pruebas de funcionalidad pasando.
+Resultado: 36/36 pruebas de funcionalidad pasando.
+
+## Observación sobre la temporización del recordatorio
+
+La temporización (24h antes e inmediato) se verifica en `handler.test.js` mediante mock de `crearTrabajoRecordatorio`.

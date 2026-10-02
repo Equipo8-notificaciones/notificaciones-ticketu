@@ -176,3 +176,51 @@ describe('NotificacionService.enviarConReintentos', () => {
   });
 });
 
+//	Variante: segundo intento funciona
+describe('NotificacionService.enviarConReintentos: éxito al segundo intento', () => {
+  beforeEach(limpiarRepositorio);
+
+  test('si el primer intento falla y el segundo funciona, hace 2 llamadas y registra intentos_envio=2', async () => {
+    const creada = await service.crearNotificacion(payloadBase());
+    let llamadas = 0;
+
+    const resultado = await service.enviarConReintentos(
+      creada.id_notificacion,
+      async () => {
+        llamadas += 1;
+        if (llamadas === 1) {
+          throw new Error('fallo simulado en el primer intento');
+        }
+        // Segundo intento: éxito
+      },
+      3
+    );
+
+    assert.strictEqual(llamadas, 2, 'Debe haber hecho exactamente 2 llamadas');
+    assert.strictEqual(resultado.intentos_envio, 2);
+    assert.strictEqual(resultado.error_envio, null);
+  });
+});
+
+
+//	Orden cronológico de notificaciones
+describe('NotificacionService: orden cronológico', () => {
+  beforeEach(limpiarRepositorio);
+
+  test('obtenerCentro devuelve las notificaciones ordenadas por fecha descendente', async () => {
+    // Creamos 3 notificaciones con fechas distintas (más antigua primero)
+    const a = await service.crearNotificacion(payloadBase({ usuarioId: 'u-orden' }));
+    await new Promise((resolve) => setTimeout(resolve, 5)); // pequeña pausa para diferenciar fechas
+    const b = await service.crearNotificacion(payloadBase({ usuarioId: 'u-orden' }));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const c = await service.crearNotificacion(payloadBase({ usuarioId: 'u-orden' }));
+
+    const centro = await service.obtenerCentro('u-orden');
+
+    assert.strictEqual(centro.length, 3);
+    // La más reciente (c) debe ir primero
+    assert.strictEqual(centro[0].id_notificacion, c.id_notificacion);
+    assert.strictEqual(centro[2].id_notificacion, a.id_notificacion);
+  });
+});
+

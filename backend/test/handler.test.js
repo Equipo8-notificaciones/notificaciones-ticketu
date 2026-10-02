@@ -3,9 +3,29 @@ process.env.BROKER_MODE = 'mock';
 
 const { test, describe, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const path = require('node:path');
 
 const broker = require('../src/broker/mockBroker');
 const repository = require('../src/repositories/notificacionRepository');
+
+// Mock global de crearTrabajoRecordatorio ANTES de importar el handler
+const llamadasRecordatorio = [];
+const jobsPath = path.resolve(__dirname, '../src/jobs/notificacionJobs.js');
+const jobsReales = require(jobsPath);
+
+require.cache[require.resolve(jobsPath)] = {
+  id: jobsPath,
+  filename: jobsPath,
+  loaded: true,
+  exports: {
+    ...jobsReales,
+    crearTrabajoRecordatorio: (datos) => {
+      llamadasRecordatorio.push(datos);
+      return { tipo: 'RECORDATORIO_24H', datos };
+    }
+  }
+};
+
 const {
   manejarEntradaEmitida,
   procesarEnvioCorreoEntradaEmitida,
@@ -97,4 +117,95 @@ describe('Handler: procesarEnvioCorreoEntradaEmitida', () => {
     );
   });
 });
+
+//  Encolado del correo
+describe('Handler: encolado del correo', () => {
+  beforeEach(limpiarRepositorio);
+
+  test('encola el correo exactamente una vez por evento', async () => {
+    const publicados = [];
+    const originalPublish = broker.publish.bind(broker);
+    broker.publish = async (topic, payload) => {
+      publicados.push({ topic, payload});
+      return originalPublish(topic, payload);
+    };
+
+    const evento = {
+      tipo: 'entrada_emitida',
+      id_usuario: 'u1',
+      id_evento: 'ev1',
+      nombre_evento: 'Concierto',
+      fecha_evento: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+      cantidad_entradas: 2
+    };
+    
+    await manejarEntradaEmitida(evento);
+
+    const encolados = publicados.filter((p) => p.topic === TOPICO_INTERNO_ENVIO_CORREO);
+    assert.strictEqual(encolados.length, 1);
+    assert.ok(encolados[0].payload.id_notificacion);
+
+    broker.publish = originalPublish;
+  });
+});
+
+//  Temporización del recordatorio
+describe('Handler: temporización del recordatorio', () => {
+  beforeEach(() => {
+    llamadasRecordatorio.length = 0;
+    limpiarRepositorio();
+  });
+
+  test('programa con momento 24H_ANTES si el evento es en más de 24 horas', async () => {
+    const evento = {
+      tipo: 'entrada_emitida',
+      id_usuario: 'u1',
+      id_evento: 'ev1',
+      nombre_evento: 'Concierto',
+      fecha_evento: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+      cantidad_entradas: 2
+    };
+
+    await manejarEntradaEmitida(evento);
+
+    assert.strictEqual(llamadasRecordatorio.length, 1);
+    assert.strictEqual(llamadasRecordatorio[0].momento, '24H_ANTES');
+    assert.strictEqual(llamadasRecordatorio[0].usuarioId, 'u1');
+    assert.strictEqual(llamadasRecordatorio[0].idEvento, 'ev1');
+  });
+
+  test('programa con momento INMEDIATO si el evento es en menos de 24 horas', async () => {
+    const evento = {
+      tipo: 'entrada_emitida',
+      id_usuario: 'u1',
+      id_evento: 'ev1',
+      nombre_evento: 'Concierto',
+      fecha_evento: new Date(Date.now() + 12 * 3600 * 1000).toISOString(),
+      cantidad_entradas: 1
+    };
+
+    await manejarEntradaEmitida(evento);
+
+    assert.strictEqual(llamadasRecordatorio.length, 1);
+    assert.strictEqual(llamadasRecordatorio[0].momento, 'INMEDIATO');
+  });
+
+  test('programa con momento INMEDIATO si el evento ya ocurrió', async () => {
+    const evento = {
+      tipo: 'entrada_emitida',
+      id_usuario: 'u1',
+      id_evento: 'ev1',
+      nombre_evento: 'Concierto',
+      fecha_evento: new Date(Date.now() - 3600 * 1000).toISOString(),
+      cantidad_entradas: 1
+    };
+
+    await manejarEntradaEmitida(evento);
+
+    assert.strictEqual(llamadasRecordatorio.length, 1);
+    assert.strictEqual(llamadasRecordatorio[0].momento, 'INMEDIATO');
+  });
+});
+
+
 
