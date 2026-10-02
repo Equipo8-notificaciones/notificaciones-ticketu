@@ -1,0 +1,143 @@
+# Contrato de interfaz: Panel Organizador ↔ Notificaciones
+* **Versión:** 1.0
+* **Equipo consumidor:** Notificaciones
+* **Equipo proveedor:** Panel Organizador
+* **Basado en:** HU6 — Recibir notificación por cancelación o cambios de evento y
+
+---
+
+## 1. Propósito
+Notificaciones necesita conocer los cambios relevantes en el estado de un evento
+(modificaciones y cancelaciones) para informar oportunamente a los usuarios que poseen
+entradas activas. Panel Organizador publica un evento cuando un organizador cancela o
+modifica el estado de un evento.
+
+---
+
+## 2. Operación: Publicar evento evento_actualizado
+
+### 2.1 Descripción
+Publica un evento cuando el estado de un evento cambia y los asistentes deben ser
+informados.
+
+### 2.2 Quién la expone
+Equipo Panel Organizador.
+
+### 2.3 Quién la consume
+Equipo Notificaciones, en el momento en que el organizador realiza una cancelación o cambio
+que debe ser comunicado a los asistentes.
+
+### 2.4 Endpoint propuesto
+[EVENTO ASÍNCRONO]
+(Comunicación vía broker de mensajes asíncrono).
+
+### 2.5 Request (lo que se envía)
+Exchange: panel.evento.notificaciones.v1
+
+Evento: evento_actualizado
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id_evento` | `string` | Sí | Identificador del evento modificado. |
+| `id_usuario` | `string` | Sí | Identificador de quién cambio el estado del evento (cuenta tipo staff). |
+| `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `publicado`. |
+
+Evento: evento_reprogramado
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id_evento` | `string` | Sí | Identificador del evento modificado. |
+| `id_usuario` | `string` | Sí | Identificador de quién cambio el estado del evento (cuenta tipo staff). |
+| `nuevo_estado` | `string` | Sí | Nuevo estado del evento: `borrador`, `cancelado`, `finalizado` y `publicado`. |
+| `fecha_cambio` | `timestamptz` | Sí | Fecha en que será cambiado el evento. |
+| `hora_cambio` | `timestamptz` | Sí | Hora en que será cambiado el evento. |
+
+Ejemplo:
+* evento_actualizado:
+```
+{
+  "id_evento": "evt-001",
+  "id_usuario": "usr-001",
+  "nuevo_estado": "CANCELADO",
+}
+```
+
+Ejemplo:
+* evento_reprogramado:
+```
+{
+  "id_evento": "evt-001",
+  "id_usuario": "usr-001",
+  "nuevo_estado": "PUBLICADO",
+  "fecha_cambio": "2026-09-13"
+  "hora_cambio": "00:00:00"
+}
+```
+
+### 2.6 Response (lo que se recibe)
+Notificaciones informa el resultado directamente al organizador, mediante su propio sistema de notificaciones.
+
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id_evento` | `string` | Sí | Identificador del evento afectado. |
+| `id_usuario` | `string` | Sí | Identificador de quien cambió el estado del evento. |
+| `nuevo_estado` | `string` | Sí | Resultado del proceso de envío. Puede ser `exitoso` o `error`. |
+| `usuarios_notificados` | `integer` | Cantidad de usuarios a los que se envió la notificación correctamente. |
+| `usuarios_faltantes` | `integer` | Cantidad de usuarios a los que se les pudo enviar la notificación correctamente. |
+| `fecha_envio` | `timestamptz` | Fecha y hora en que finalizó el proceso de envío. |
+
+Ejemplo de notificación al organizador:
+```
+Evento actualizado
+El estado del evento ha sido actualizado correctamente.
+Usuarios notificados: 150
+Usuarios no notificados: 0
+Fecha de envío: 1 de octubre de 2026, 13:30
+```
+
+>[!NOTE]
+>Panel Organizador no necesita enviar a Notificaciones la lista de
+usuarios asistentes. Notificaciones obtiene los usuarios que poseen entradas activas
+para el id_evento recibido.
+
+### 2.7 Códigos de error
+Al tratarse de comunicación asíncrona, no se utilizan códigos HTTP para la respuesta del
+evento.
+
+Los errores de procesamiento o envío serán registrados por Notificaciones. El envío tendrá
+hasta 3 intentos antes de registrar el error correspondiente.
+
+### 2.8 Tiempo de respuesta esperado (SLA)
+El evento debe ser publicado inmediatamente después de la emisión de las entradas, ≤ 5
+segundos. Tomando en cuenta el envío del evento hasta el envió de confirmación de
+notificaciones.
+
+---
+
+## 3. Reglas de uso (lado consumidor)
+1. Notificaciones permanece suscrito al evento evento_actualizado mediante el broker.
+2. Al recibirlo, identifica el evento mediante id_evento y obtiene los usuarios que poseen
+entradas activas.
+3. Genera y almacena una notificación para cada usuario afectado.
+4. Envía las notificaciones y realiza hasta 3 intentos en caso de error.
+5. Una vez realizado el proceso, se informa al organizador que “El envío se realizó
+correctamente”, cuando corresponda.
+
+---
+
+## 4. Versionado y cambios
+* Cualquier cambio en la estructura del evento debe ser versionado y comunicado con
+anticipación.
+* Cambios que rompan compatibilidad (breaking changes) requieren un período de
+transición acordado entre ambos equipos.
+
+---
+
+## 5. Dueños del contrato
+| Rol | Equipo | Contacto |
+| :--- | :--- | :--- |
+|Dueño del contrato | Panel Organizador | María Baxmann |
+|Consumidor principal | Notificaciones | Gabriela Herrera |
+
+---
+
+## 6. Pendientes a acordar (OPCIONAL PREVIO ACUERDO)
+- [ ] Confirmar SLA de tiempo de respuesta.
