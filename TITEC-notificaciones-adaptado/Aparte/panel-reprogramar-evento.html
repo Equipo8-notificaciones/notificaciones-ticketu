@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PANEL · Reprogramar evento</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#182237;background:#f3f6fb}
+    *{box-sizing:border-box}body{margin:0;padding:28px}.card{max-width:760px;margin:auto;background:#fff;border:1px solid #dfe6f0;border-radius:16px;padding:28px;box-shadow:0 10px 30px #14233a0b}
+    h1{margin:0 0 8px;font-size:clamp(1.5rem,4vw,2rem)}p{line-height:1.55;color:#526078}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;margin:14px 0 6px;font-weight:650;font-size:.9rem}input{width:100%;padding:11px 12px;border:1px solid #c9d3e2;border-radius:8px;font:inherit;background:#fff}button{margin:18px 10px 0 0;border:0;border-radius:9px;padding:12px 16px;background:#2458d3;color:white;font:inherit;font-weight:650;cursor:pointer}button.secondary{background:#e8edf6;color:#182237}#status{font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#101827;color:#e4edff;border-radius:10px;padding:16px;min-height:80px}.hint{font-size:.85rem;color:#66738b}@media(max-width:600px){body{padding:12px}.card{padding:18px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Reprogramar evento</h1>
+    <p>Simula una operación de PANEL. El backend actualiza <code>fecha_evento</code>, asigna <code>estado_evento = REPROGRAMADO</code>, cambia <code>updated_at</code> y crea una notificación <code>CAMBIO_EVENTO</code> para cada usuario con una entrada activa.</p>
+    <label for="api">URL del backend</label><input id="api" value="http://localhost:3000" inputmode="url">
+    <div class="grid">
+      <div><label for="id_evento">ID del evento *</label><input id="id_evento" value="ev23" required></div>
+      <div><label for="nombre_evento">Nombre del evento (opcional)</label><input id="nombre_evento" value="Fiesta"></div>
+      <div><label for="nueva_fecha">Nueva fecha *</label><input id="nueva_fecha" type="date" required></div>
+      <div><label for="nueva_hora">Nueva hora *</label><input id="nueva_hora" type="time" value="22:00" required></div>
+    </div>
+    <p class="hint">La fecha y la hora se interpretan en la zona horaria local del navegador y se envían como ISO 8601 al backend.</p>
+    <button id="send">Reprogramar evento</button><button class="secondary" id="preview">Ver JSON</button>
+    <p id="status" role="status">Completa los datos para probar.</p><pre id="out">La respuesta aparecerá aquí.</pre>
+  </main>
+<script>
+const $=id=>document.getElementById(id);
+const today=new Date();$('nueva_fecha').value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+function data(){const local=$('nueva_fecha').value&&$('nueva_hora').value?new Date(`${$('nueva_fecha').value}T${$('nueva_hora').value}:00`):null;return {id_evento:$('id_evento').value.trim(),nombre_evento:$('nombre_evento').value.trim()||undefined,nueva_fecha_evento:local&&!Number.isNaN(local.getTime())?local.toISOString():undefined}}
+function show(v){$('out').textContent=JSON.stringify(v,null,2)}
+$('preview').onclick=()=>show(data());
+$('send').onclick=async()=>{const d=data();if(!d.id_evento||!d.nueva_fecha_evento){$('status').textContent='Completa el ID del evento, la fecha y la hora.';return} $('status').textContent='Enviando solicitud…';try{const r=await fetch($('api').value.trim().replace(/\/$/, '')+'/api/panel/reprogramar-evento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});const j=await r.json();show(j);$('status').textContent=`HTTP ${r.status}${r.ok?' · Solicitud procesada':' · Error'}`}catch(e){$('status').textContent='No se pudo conectar con el backend.';show({error:e.message,datos_enviados:d})}};
+</script>
+</body>
+</html>

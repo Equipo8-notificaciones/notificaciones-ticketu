@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PANEL · Cancelar evento</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#182237;background:#f3f6fb}
+    *{box-sizing:border-box}body{margin:0;padding:28px}.card{max-width:760px;margin:auto;background:#fff;border:1px solid #dfe6f0;border-radius:16px;padding:28px;box-shadow:0 10px 30px #14233a0b}
+    h1{margin:0 0 8px;font-size:clamp(1.5rem,4vw,2rem)}p{line-height:1.55;color:#526078}label{display:block;margin:14px 0 6px;font-weight:650;font-size:.9rem}input,textarea{width:100%;padding:11px 12px;border:1px solid #c9d3e2;border-radius:8px;font:inherit;background:#fff}textarea{min-height:90px;resize:vertical}button{margin:18px 10px 0 0;border:0;border-radius:9px;padding:12px 16px;background:#b42332;color:white;font:inherit;font-weight:650;cursor:pointer}button.secondary{background:#e8edf6;color:#182237}#status{font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#101827;color:#e4edff;border-radius:10px;padding:16px;min-height:80px}.hint{font-size:.85rem;color:#66738b}@media(max-width:600px){body{padding:12px}.card{padding:18px}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Cancelar evento</h1>
+    <p>Simula una operación de PANEL. El backend asigna <code>estado_evento = CANCELADO</code>, actualiza <code>updated_at</code> y crea una notificación <code>CANCELACION_EVENTO</code> para cada usuario con entrada activa.</p>
+    <label for="api">URL del backend</label><input id="api" value="http://localhost:3000" inputmode="url">
+    <label for="id_evento">ID del evento *</label><input id="id_evento" value="ev23" required>
+    <label for="nombre_evento">Nombre del evento (opcional)</label><input id="nombre_evento" value="Fiesta">
+    <label for="motivo">Motivo (opcional)</label><textarea id="motivo" placeholder="Ej.: motivos de organización"></textarea>
+    <p class="hint">La cancelación afecta las filas de ese ID de evento en <code>entradas_usuario</code>. No borra los registros ni desactiva la entrada.</p>
+    <button id="send">Cancelar evento</button><button class="secondary" id="preview">Ver JSON</button>
+    <p id="status" role="status">Completa el ID del evento para probar.</p><pre id="out">La respuesta aparecerá aquí.</pre>
+  </main>
+<script>
+const $=id=>document.getElementById(id);
+function data(){return {id_evento:$('id_evento').value.trim(),nombre_evento:$('nombre_evento').value.trim()||undefined,motivo:$('motivo').value.trim()||undefined}}
+function show(v){$('out').textContent=JSON.stringify(v,null,2)}
+$('preview').onclick=()=>show(data());
+$('send').onclick=async()=>{const d=data();if(!d.id_evento){$('status').textContent='Indica el ID del evento.';return}if(!confirm(`¿Confirmas cancelar el evento ${d.id_evento}?`))return;$('status').textContent='Enviando solicitud…';try{const r=await fetch($('api').value.trim().replace(/\/$/, '')+'/api/panel/cancelar-evento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});const j=await r.json();show(j);$('status').textContent=`HTTP ${r.status}${r.ok?' · Solicitud procesada':' · Error'}`}catch(e){$('status').textContent='No se pudo conectar con el backend.';show({error:e.message,datos_enviados:d})}};
+</script>
+</body>
+</html>
