@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Simular Entradas</title>
+    <style>body{font:16px system-ui;
+        background:#f3f5f9;
+        color:#172033;
+        margin:24px}
+        .box{max-width:850px;
+        margin:auto;
+        background:white;
+        padding:24px;
+        border-radius:14px}
+        label{display:block;
+        font-size:13px;
+        font-weight:bold;
+        margin:12px 0 4px}
+        input{box-sizing:border-box;
+        width:100%;
+        padding:10px;
+        border:1px solid #ccd3df;
+        border-radius:7px}
+        .grid{display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:0 16px}
+        button{padding:11px 16px;
+        margin:16px 8px 0 0;
+        background:#2458d3;
+        color:white;
+        border:0;
+        border-radius:8px;
+        cursor:pointer}
+        pre{background:#101827;
+        color:#dce6f7;
+        padding:14px;
+        white-space:pre-wrap;
+        overflow-wrap:anywhere}
+        @media(max-width:600px){
+            .grid{grid-template-columns:1fr}
+            body{margin:10px}}
+    </style>
+
+    <main class="box">
+        <h1>Simular llegada desde Entradas</h1>
+        <p>Envía los datos al endpoint de prueba del backend. Con DATABASE_URL configurada, se guardan entrada y notificaciones en Supabase. El correo se envía por SMTP o se simula si SMTP no está configurado.</p>
+        <label>URL backend</label>
+        <input id="api" value="http://localhost:3000">
+        <div class="grid">
+            <div>
+                <label>Correo comprador</label>
+                <input id="correo_comprador" value="notificacionestitec@gmail.com" type="email">
+            </div>
+            <div>
+                <label>Nombre comprador</label>
+                <input id="nombre_comprador" value="Gabriela">
+            </div>
+            <div>
+                <label>ID usuario</label>
+                <input id="id_usuario" value="usr123">
+            </div>
+            <div>
+                <label>ID evento</label>
+                <input id="id_evento" value="ev23">
+            </div>
+            <div>
+                <label>Nombre evento</label>
+                <input id="nombre_evento" value="Fiesta">
+            </div>
+            <div>
+                <label>Fecha evento</label>
+                <input id="fecha_evento" type="date" value="2026-11-20">
+            </div>
+            <div>
+                <label>Hora evento</label>
+                <input id="hora_evento" type="time" value="22:00">
+            </div>
+            <div>
+                <label>Cantidad entradas</label>
+                <input id="cantidad_entradas" type="number" min="1" value="1">
+            </div>
+            <div>
+                <label>QR data</label>
+                <input id="qr_data" value="https://storange.midominio.com/qr/tk-12345.png">
+            </div>
+            <div>
+                <label>Ubicación (opcional)</label>
+                <input id="ubicacion_evento">
+            </div>
+        </div>
+        
+        <button id="send">Enviar al backend</button>
+        <button id="preview">Ver JSON</button>
+        <p id="status">Esperando envío…</p>
+        <pre id="out">La respuesta aparecerá aquí.</pre>
+    </main>
+    
+    <script>
+        const fields=['correo_comprador','nombre_comprador','id_usuario','id_evento','nombre_evento','fecha_evento','hora_evento','cantidad_entradas','qr_data','ubicacion_evento'];
+
+        function data(){let d={};
+            fields.forEach(k=>{let v=document.getElementById(k).value.trim();
+                if(v)d[k]=k==='cantidad_entradas'?Number(v):v});
+            return d
+        }
+        function show(x){out.textContent=JSON.stringify(x,null,2)}
+        
+        preview.onclick=()=>show(data());
+        
+        send.onclick=async()=>{let d=data();
+        
+        for(let k of fields.slice(0,7).concat('qr_data'))
+            if(!d[k]){
+                status.textContent='Falta el campo '+k;
+                return
+            }
+        status.textContent='Enviando…';
+        try{
+            let r=await fetch(api.value.replace(/\/$/, '')+'/api/notificaciones/probar-entradas',{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(d)
+                }
+            );
+            let j=await r.json();
+            show(j);
+            status.textContent='HTTP '+r.status
+        }
+        catch(e){
+            status.textContent='No se pudo conectar. Comprueba que el backend esté activo y CORS habilitado.';
+            show({error:e.message,datos_enviados:d})
+        }
+    }
+    </script>
+</html>
