@@ -1,30 +1,38 @@
 # ============================================================================
-# Dockerfile — imagen de producción del front-end (Next.js)
+# Dockerfile — TicketU Front-end
 # ----------------------------------------------------------------------------
-# Build multi-stage: una etapa compila el proyecto, la otra corre solo lo
-# necesario para servirlo. Así la imagen final es más liviana.
+# Build multi-stage.
+#
+# NEXT_PUBLIC_GATEWAY_URL se pasa durante el build porque Next.js incorpora
+# las variables NEXT_PUBLIC_* al bundle que ejecutará el navegador.
 # ============================================================================
 
-# ---- Etapa 1: dependencias + build ----
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+ENV NEXT_PUBLIC_GATEWAY_URL=${NEXT_PUBLIC_GATEWAY_URL}
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
+
+# El repositorio puede no tener una carpeta public todavía.
+RUN mkdir -p public
+
 RUN npm run build
 
-# ---- Etapa 2: imagen final, solo lo necesario para correr ----
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 
 EXPOSE 3000

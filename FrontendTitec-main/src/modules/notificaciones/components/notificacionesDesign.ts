@@ -1,6 +1,4 @@
 export const notificaciones_design = {
-  color_fondo_contenido: "#FFFFFF",
-  color_fondo_panel: "#F8F9FA",
   color_superficie: "#FFFFFF",
   color_banner: "#EEF1F8",
   color_texto_primario: "#2F4374",
@@ -13,7 +11,6 @@ export const notificaciones_design = {
   color_borde: "#D8DFF0",
   tipografia_titulos: "Poppins, sans-serif",
   tipografia_interfaz: "Inter, sans-serif",
-  radio_tarjeta: "12px", // Radio de esquina (border-radius) para tarjetas y contenedor de eventos
-  radio_control: "8px", // Radio de esquina (border-radius) para botones, inputs y controles de formulario
-  sombra_tarjeta: "0 8px 24px rgba(47, 67, 116, 0.08)", // Sombra suave (box-shadow) para tarjetas con opacidad del 8% sobre el azul principal #2F4374
+  radio_tarjeta: "12px",
+  sombra_tarjeta: "0 8px 24px rgba(47, 67, 116, 0.08)",
 } as const;

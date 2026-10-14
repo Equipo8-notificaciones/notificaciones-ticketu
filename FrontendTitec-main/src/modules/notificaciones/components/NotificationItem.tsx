@@ -1,21 +1,89 @@
 import type { Notificacion } from "../api";
 import { notificaciones_design } from "./notificacionesDesign";
+import { useRef } from "react";
 import RecordatorioEvento from "./RecordatorioEvento";
 
 type NotificationItemProps = {
   notificacion: Notificacion;
+  modo_seleccion: boolean;
+  seleccionada: boolean;
+  al_abrir: () => void;
+  al_mantener_presionada: () => void;
+  al_alternar_seleccion: () => void;
 };
 
-export default function NotificationItem({ notificacion }: NotificationItemProps) {
+export default function NotificationItem({
+  notificacion,
+  modo_seleccion,
+  seleccionada,
+  al_abrir,
+  al_mantener_presionada,
+  al_alternar_seleccion,
+}: NotificationItemProps) {
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulsacion_larga = useRef(false);
   const fecha_emision = new Intl.DateTimeFormat("es", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(notificacion.fecha_emision));
 
+  function iniciar_pulsacion_larga() {
+    pulsacion_larga.current = false;
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = setTimeout(() => {
+      pulsacion_larga.current = true;
+      al_mantener_presionada();
+    }, 1000);
+  }
+
+  function limpiar_pulsacion_larga() {
+    if (temporizador.current) {
+      clearTimeout(temporizador.current);
+      temporizador.current = null;
+    }
+  }
+
   return (
-    <div
-      className={`notificacion ${notificacion.estado === "NO_LEIDA" ? "no-leida" : ""}`}
-    >
+    <div className={`notificacion ${notificacion.estado === "no_leida" ? "no-leida" : ""} ${seleccionada ? "seleccionada" : ""}`}>
+      {modo_seleccion && (
+        <input
+          className="selector"
+          type="checkbox"
+          checked={seleccionada}
+          onChange={al_alternar_seleccion}
+          aria-label={`Seleccionar ${notificacion.titulo}`}
+        />
+      )}
+      <div
+        className="contenido-notificacion"
+        role="button"
+        tabIndex={0}
+        aria-pressed={modo_seleccion ? seleccionada : undefined}
+        onPointerDown={iniciar_pulsacion_larga}
+        onMouseDown={iniciar_pulsacion_larga}
+        onTouchStart={iniciar_pulsacion_larga}
+        onPointerUp={limpiar_pulsacion_larga}
+        onMouseUp={limpiar_pulsacion_larga}
+        onTouchEnd={limpiar_pulsacion_larga}
+        onPointerLeave={limpiar_pulsacion_larga}
+        onPointerCancel={limpiar_pulsacion_larga}
+        onContextMenu={(event) => event.preventDefault()}
+        onClick={() => {
+          if (pulsacion_larga.current) {
+            pulsacion_larga.current = false;
+            return;
+          }
+          if (modo_seleccion) al_alternar_seleccion();
+          else al_abrir();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (modo_seleccion) al_alternar_seleccion();
+            else al_abrir();
+          }
+        }}
+      >
       <div className="icono">
         <svg
           aria-hidden="true"
@@ -25,7 +93,7 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-        > 
+        >
           {notificacion.tipo === "COMPRA" ? (
             <path d="m5 12 4 4L19 6" />
           ) : notificacion.tipo === "RECORDATORIO" ? (
@@ -41,21 +109,16 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
           )}
         </svg>
       </div>
-
       <div className="contenido">
         <div className="titulo-fila">
           <h3>{notificacion.titulo}</h3>
-
-          {notificacion.estado === "NO_LEIDA" && (
-            <span className="punto-no-leida"></span>
+          {notificacion.estado === "no_leida" && (
+            <span className="punto-no-leida" aria-label="Sin leer" />
           )}
         </div>
-
         {notificacion.tipo === "RECORDATORIO" ? (
-          // Sprint 4 — HU2: Recibir recordatorio del evento
           <RecordatorioEvento notificacion={notificacion} />
         ) : (
-          // Sprint 3 — HU1: Recibir correo de compra
           <>
             {typeof notificacion.datos.nombreEvento === "string" && (
               <p className="evento">{notificacion.datos.nombreEvento}</p>
@@ -76,14 +139,43 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
           </>
         )}
       </div>
-
+      </div>
       <style jsx>{`
         .notificacion {
           display: flex;
+          align-items: flex-start;
           gap: 12px;
           padding: 16px 20px;
           border-bottom: 1px solid ${notificaciones_design.color_banner};
           background: ${notificaciones_design.color_superficie};
+        }
+
+        .notificacion.seleccionada {
+          background: ${notificaciones_design.color_banner};
+        }
+
+        .selector {
+          flex: 0 0 16px;
+          width: 16px;
+          height: 16px;
+          margin: 10px 0 0;
+          accent-color: ${notificaciones_design.color_acento};
+          cursor: pointer;
+        }
+
+        .contenido-notificacion {
+          display: flex;
+          flex: 1;
+          min-width: 0;
+          gap: 12px;
+          cursor: pointer;
+          outline-offset: 3px;
+          touch-action: pan-y;
+          user-select: none;
+        }
+
+        .contenido-notificacion:focus-visible {
+          outline: 2px solid ${notificaciones_design.color_acento};
         }
 
         .notificacion.no-leida {
@@ -91,17 +183,15 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
         }
 
         .icono {
+          display: flex;
+          flex: 0 0 36px;
+          align-items: center;
+          justify-content: center;
           width: 36px;
           height: 36px;
-          flex-shrink: 0;
           border-radius: 50%;
           background: ${notificaciones_design.color_exito_fondo};
           color: ${notificaciones_design.color_exito_texto};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-          font-weight: 600;
         }
 
         .icono svg {
@@ -110,13 +200,17 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
         }
 
         .notificacion.no-leida .icono {
-          background: ${notificaciones_design.color_banner};
+          background: ${notificaciones_design.color_superficie};
           color: ${notificaciones_design.color_texto_primario};
         }
 
         .contenido {
           flex: 1;
           min-width: 0;
+        }
+
+        .notificacion.no-leida .contenido {
+          font-weight: 600;
         }
 
         .titulo-fila {
@@ -130,10 +224,11 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
           color: ${notificaciones_design.color_texto_primario};
           font-family: ${notificaciones_design.tipografia_titulos};
           font-size: 14px;
-          font-weight: 600;
+          font-weight: ${notificacion.estado === "no_leida" ? "700" : "600"};
         }
 
         .punto-no-leida {
+          flex: 0 0 7px;
           width: 7px;
           height: 7px;
           border-radius: 50%;
@@ -152,7 +247,6 @@ export default function NotificationItem({ notificacion }: NotificationItemProps
           color: ${notificaciones_design.color_texto_secundario};
           font-size: 12px;
         }
-
       `}</style>
     </div>
   );

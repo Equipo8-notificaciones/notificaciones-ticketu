@@ -5,44 +5,28 @@ type RecordatorioEventoProps = {
   notificacion: Notificacion;
 };
 
-function formatearFechaEvento(fechaEvento: string) {
-  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(fechaEvento);
-  if (isoMatch) return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
-
-  return fechaEvento;
-}
-
-export default function RecordatorioEvento({
-  notificacion,
-}: RecordatorioEventoProps) {
+export default function RecordatorioEvento({ notificacion }: RecordatorioEventoProps) {
   const fecha_emision = new Intl.DateTimeFormat("es", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(notificacion.fecha_emision));
 
   return (
-    // Sprint 4 — HU2: Recibir recordatorio del evento
     <div className="notificacion-contenido">
       <div className="notificacion-texto">
         {typeof notificacion.datos.nombreEvento === "string" && (
-          <p className="notificacion-detalle">
-            {notificacion.datos.nombreEvento}
-          </p>
+          <p className="notificacion-detalle">{notificacion.datos.nombreEvento}</p>
         )}
         {typeof notificacion.datos.fechaEvento === "string" && (
           <p className="notificacion-detalle">
-            Fecha del evento: {formatearFechaEvento(notificacion.datos.fechaEvento)}
+            Fecha del evento: {notificacion.datos.fechaEvento}
           </p>
         )}
         {typeof notificacion.datos.horaEvento === "string" && (
-          <p className="notificacion-detalle">
-            Hora: {notificacion.datos.horaEvento}
-          </p>
+          <p className="notificacion-detalle">Hora: {notificacion.datos.horaEvento}</p>
         )}
         {typeof notificacion.datos.ubicacion === "string" && (
-          <p className="notificacion-detalle">
-            Lugar: {notificacion.datos.ubicacion}
-          </p>
+          <p className="notificacion-detalle">Lugar: {notificacion.datos.ubicacion}</p>
         )}
         {typeof notificacion.datos.enlaceEvento === "string" && (
           <a className="notificacion-enlace" href={notificacion.datos.enlaceEvento}>
@@ -54,15 +38,14 @@ export default function RecordatorioEvento({
         )}
         <p className="notificacion-fecha">{fecha_emision}</p>
       </div>
-
       <style jsx>{`
-        .notificacion-contenido {
-          min-width: 0;
-          font-family: ${notificaciones_design.tipografia_interfaz};
-        }
-
+        .notificacion-contenido,
         .notificacion-texto {
           min-width: 0;
+        }
+
+        .notificacion-contenido {
+          font-family: ${notificaciones_design.tipografia_interfaz};
         }
 
         .notificacion-detalle {

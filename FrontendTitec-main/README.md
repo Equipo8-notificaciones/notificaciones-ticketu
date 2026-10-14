@@ -1,189 +1,332 @@
 # TicketU — Front-end
 
-Este repositorio es la **base común del front-end**, entregada por el *platform team*.
-Está hecha en **Next.js** (un framework construido sobre React, que además trae el sistema
-de rutas y la estructura de carpetas ya resuelta).
+Este repositorio es la **base común del front-end** de TicketU, entregada por el _Platform Team_. Está desarrollado en **Next.js** y funciona como la interfaz compartida de los 9 módulos del proyecto.
 
-Cada uno de los 9 grupos trabaja en **sus propias carpetas**, sin tocar el código de los
-demás. Este documento explica exactamente qué carpetas le corresponden a cada grupo.
+Cada grupo trabaja principalmente en sus propias carpetas. El front **no conoce las URLs individuales de los microservicios**: todas las peticiones al backend pasan por un único **API Gateway**.
 
 ---
 
-## 1. Antes de empezar (modo desarrollo, sin Docker)
+## 1. Antes de empezar — desarrollo sin Docker
+
+Instalen las dependencias:
 
 ```bash
-npm install        # instala dependencias
-cp .env.example .env.local   # copia las variables de entorno
-npm run dev        # levanta el proyecto en http://localhost:3000
+npm install
 ```
 
-Abran `.env.local` y reemplacen `NEXT_PUBLIC_GATEWAY_URL` por la URL real del API Gateway
-cuando esté disponible (mientras tanto, `http://localhost:8080` sirve como valor de prueba).
+Luego creen el archivo de variables de entorno a partir del ejemplo.
 
-Este modo (`npm run dev`) es el que van a usar el 95% del tiempo mientras programan: tiene
-recarga automática al guardar cambios. La sección 8 explica cómo compilar y correr la
-versión de producción, y cómo levantar el front en Docker.
+En Linux, macOS o Git Bash:
+
+```bash
+cp .env.example .env.local
+```
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Finalmente:
+
+```bash
+npm run dev
+```
+
+El front quedará disponible en:
+
+```text
+http://localhost:3000
+```
+
+El archivo `.env.local` debe contener la dirección pública del API Gateway:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+```
+
+Mientras el Gateway esté ejecutándose en la misma máquina, ese valor es suficiente.
+
+> `NEXT_PUBLIC_GATEWAY_URL` debe ser una dirección que pueda abrir el navegador. Por eso, para desarrollo local se utiliza `http://localhost:8080`.
 
 ---
 
 ## 2. Idea general de la estructura
 
-Hay dos carpetas importantes dentro de `src/`, y cumplen roles distintos:
+Hay tres zonas importantes dentro de `src/`:
 
-- **`src/app/`** → define **QUÉ URL** muestra **QUÉ**. Es el "mapa" de rutas de Next.js:
-  cada carpeta dentro de `app/` es una página (`app/pagos/` = ruta `/pagos`). Los archivos
-  acá deben ser **cortos**: solo importan y muestran el componente principal de su módulo.
-
-- **`src/modules/`** → acá vive **TODO el trabajo real** de cada grupo: las llamadas a su
-  microservicio (`api.ts`) y todos sus componentes (`components/`). Este es el lugar donde
-  van a pasar el 95% del tiempo programando.
-
-Piensen a `app/` como el "letrero de la puerta" y a `modules/` como la "oficina" donde
-realmente se trabaja.
-
-```
+```text
 src/
-├── app/            ← rutas (letreros de puerta) — NO programen lógica acá
-├── components/     ← Header, Footer y UI compartida — NO LO TOQUEN sin acuerdo de los 9 grupos
-├── modules/        ← acá programa cada grupo, en SU carpeta
-└── lib/env.ts       ← URLs de los 9 microservicios, centralizadas
+├── app/            ← rutas y páginas de Next.js
+├── components/     ← componentes compartidos como Header y Footer
+├── modules/        ← código correspondiente a cada uno de los 9 grupos
+└── lib/
+    └── env.ts      ← URL única del API Gateway
 ```
+
+### `src/app/`
+
+Define qué URL muestra cada página.
+
+Por ejemplo:
+
+```text
+app/pagos/ → /pagos
+```
+
+Los archivos de esta carpeta deben contener poca lógica. Principalmente importan y muestran componentes del módulo correspondiente.
+
+### `src/modules/`
+
+Aquí vive el trabajo principal de cada grupo:
+
+```text
+modules/<modulo>/
+├── api.ts
+└── components/
+```
+
+- `api.ts`: contiene las llamadas al backend.
+- `components/`: contiene la interfaz y lógica visual del módulo.
+
+### `src/lib/env.ts`
+
+Centraliza la única dirección que necesita conocer el front: la del **API Gateway**.
+
+El front **no almacena las URLs de los 9 microservicios**.
 
 ---
 
 ## 3. Qué carpetas usa cada grupo
 
-**Regla general:** cada grupo edita **solo** `src/app/<su-ruta>/` y `src/modules/<su-módulo>/`.
-No hace falta tocar nada fuera de esas dos carpetas.
+Cada grupo trabaja principalmente en:
 
-| # | Grupo | Ruta (`src/app/...`) | Su carpeta de trabajo (`src/modules/...`) |
-|---|-------|------------------------|---------------------------------------------|
-| 1 | Auth | `app/auth/` | `modules/auth/` |
-| 2 | Catálogo de eventos | `app/catalogo/` y `app/catalogo/[eventoId]/` | `modules/catalogo/` |
-| 3 | Entradas / Inventario | `app/entradas/` | `modules/entradas/` (incluye un componente resumen usado por Catálogo, ver sección 4) |
-| 4 | Pagos | `app/pagos/` | `modules/pagos/` |
-| 5 | Check-in | `app/checkin/` | `modules/checkin/` |
-| 6 | Reseñas | `app/catalogo/[eventoId]/resenas/` ⚠️ ver sección 4 | `modules/resenas/` |
-| 7 | Panel organizador | `app/organizador/` | `modules/organizador/` |
-| 8 | Notificaciones | `app/notificaciones/` | `modules/notificaciones/` |
-| 9 | Promociones | `app/promociones/` | `modules/promociones/` (incluye un componente resumen usado por Catálogo, ver sección 4) |
+```text
+src/app/<su-ruta>/
+src/modules/<su-modulo>/
+```
 
-Dentro de `modules/<su-módulo>/` van a encontrar:
-- `api.ts` → acá van todas las llamadas `fetch` a su propio microservicio (ya viene
-  configurado para leer la URL correcta desde `lib/env.ts`, no hace falta escribirla de nuevo).
-- `components/` → acá van todos los componentes visuales de su módulo. Pueden crear los
-  archivos y sub-carpetas que necesiten, siempre dentro de esta carpeta.
+| #   | Grupo                 | Ruta                                         | Carpeta del módulo        |
+| --- | --------------------- | -------------------------------------------- | ------------------------- |
+| 1   | Auth                  | `app/auth/`                                  | `modules/auth/`           |
+| 2   | Catálogo de eventos   | `app/catalogo/` y `app/catalogo/[eventoId]/` | `modules/catalogo/`       |
+| 3   | Entradas / Inventario | `app/entradas/`                              | `modules/entradas/`       |
+| 4   | Pagos                 | `app/pagos/`                                 | `modules/pagos/`          |
+| 5   | Check-in              | `app/checkin/`                               | `modules/checkin/`        |
+| 6   | Reseñas               | `app/catalogo/[eventoId]/resenas/`           | `modules/resenas/`        |
+| 7   | Panel organizador     | `app/organizador/`                           | `modules/organizador/`    |
+| 8   | Notificaciones        | `app/notificaciones/`                        | `modules/notificaciones/` |
+| 9   | Promociones           | `app/promociones/`                           | `modules/promociones/`    |
 
-Ya dejamos un componente de ejemplo (`...Placeholder.tsx`) en cada módulo para que el
-proyecto compile desde el día 1. Bórrenlo o reemplácenlo por su interfaz real.
+Dentro de `modules/<su-modulo>/` encontrarán normalmente:
+
+```text
+api.ts
+components/
+```
+
+`api.ts` es el lugar donde deben concentrarse las llamadas HTTP de su módulo.
+
+No escriban directamente la dirección de su microservicio.
 
 ---
 
-## 4. Módulos que se solapan con Catálogo
+## 4. Módulos que se relacionan con Catálogo
 
-La descripción del proyecto dice que Catálogo debe mostrar, además de la información
-propia del evento: **promociones, reseñas y entradas disponibles, según corresponda**.
-Eso significa que tres grupos distintos entregan contenido dentro de la misma página, cada
-uno con un nivel de solape distinto. Léanlo con calma.
+La página de detalle de un evento necesita información que pertenece a otros módulos, por ejemplo disponibilidad de entradas, promociones y reseñas.
 
-### 4.1 Caso completo: Reseñas (Grupo 6)
+Esto no significa que Catálogo sea responsable de esas funcionalidades. Cada equipo continúa siendo dueño de su propio módulo.
 
-Las reseñas de un evento se muestran **dentro** de la página de detalle de ese evento —
-por eso su URL vive anidada: `/catalogo/123/resenas`. Reseñas tiene su propia ruta,
-propio formulario, propio estado — es una funcionalidad completa (crear, editar, eliminar
-reseñas), no solo un dato para mostrar.
+### 4.1 Reseñas — Grupo 6
 
+Las reseñas de un evento tienen una ruta propia:
+
+```text
+/catalogo/<eventoId>/resenas
 ```
+
+La estructura es:
+
+```text
 app/catalogo/
-├── page.tsx                    ← Grupo 2 (listado/búsqueda de eventos)
+├── page.tsx
 ├── [eventoId]/
-│   ├── page.tsx                ← Grupo 2 (detalle del evento)
+│   ├── page.tsx
 │   └── resenas/
-│       └── page.tsx            ← Grupo 6 (reseñas de ESE evento)
+│       └── page.tsx
 ```
 
-**Reglas:**
-1. El **Grupo 2** no edita `app/catalogo/[eventoId]/resenas/page.tsx`.
-2. El **Grupo 6** no edita los otros `page.tsx` de `app/catalogo/`.
-3. La lógica de cada grupo vive completamente separada en `modules/catalogo/` y
-   `modules/resenas/` — solo se juntan visualmente en `DetalleEventoPlaceholder.tsx`.
+Responsabilidades:
 
-### 4.2 Caso liviano: Entradas (Grupo 3) y Promociones (Grupo 9)
+```text
+Grupo 2 — Catálogo
+/catalogo
+/catalogo/<eventoId>
 
-Este caso es distinto y más simple: Catálogo necesita mostrar **cuántas entradas quedan**
-y **qué promociones están activas** para un evento, pero eso no requiere una ruta propia
-ni un formulario — es información de solo lectura. Por eso, en vez de una ruta anidada,
-Entradas y Promociones exponen un **componente resumen chico**:
+Grupo 6 — Reseñas
+/catalogo/<eventoId>/resenas
+```
 
-- `modules/entradas/components/DisponibilidadPlaceholder.tsx`
-- `modules/promociones/components/PromocionPlaceholder.tsx`
+La lógica de Reseñas vive en:
 
-Catálogo los importa y posiciona dentro de `DetalleEventoPlaceholder.tsx`, exactamente
-igual que hace con el componente de Reseñas. Revisen ese archivo para ver el patrón:
+```text
+src/modules/resenas/
+```
+
+y sus llamadas al backend usan:
+
+```text
+/api/resenas/...
+```
+
+Aunque visualmente las reseñas estén relacionadas con un evento del catálogo, el microservicio sigue siendo el de **Reseñas**.
+
+### 4.2 Entradas y Promociones dentro del detalle de un evento
+
+Catálogo puede necesitar mostrar información resumida de otros módulos, por ejemplo:
+
+```text
+Entradas disponibles: 142
+Promoción activa: 20 % de descuento
+```
+
+Para eso existen componentes pequeños pertenecientes a esos equipos:
+
+```text
+modules/entradas/components/DisponibilidadPlaceholder.tsx
+modules/promociones/components/PromocionPlaceholder.tsx
+```
+
+Catálogo puede importarlos dentro del detalle del evento:
 
 ```tsx
 import DisponibilidadPlaceholder from "@/modules/entradas/components/DisponibilidadPlaceholder";
+
 import PromocionPlaceholder from "@/modules/promociones/components/PromocionPlaceholder";
-import ResenasPlaceholder from "@/modules/resenas/components/ResenasPlaceholder";
 ```
 
-**Reglas para Entradas y Promociones:**
-1. `DisponibilidadPlaceholder.tsx` y `PromocionPlaceholder.tsx` son de **solo lectura** —
-   no metan ahí el flujo completo de compra ni el formulario de creación de promociones.
-   Esos flujos completos van en la página propia de cada grupo (`/entradas`,
-   `/promociones`).
-2. Catálogo decide dónde y cómo se posicionan estos componentes dentro de su página; el
-   contenido interno de cada componente lo deciden Entradas y Promociones.
-3. Si necesitan cambiar cómo se ve o qué datos trae el resumen, coordínenlo directamente
-   con el Grupo 2 antes de modificarlo.
+La regla sigue siendo:
 
-Recuerden también el límite de responsabilidad que ya viene del enunciado del proyecto:
-**Catálogo solo busca/lista/consulta eventos — no crea, modifica ni elimina eventos**
-(eso es el Panel organizador, Grupo 7).
+```text
+Catálogo decide dónde se muestra el bloque.
+Entradas decide qué información de entradas muestra.
+Promociones decide qué información de promociones muestra.
+```
+
+El Grupo 2 no debe implementar la lógica interna de Entradas ni Promociones.
 
 ---
 
-## 5. Header y Footer (los 9 grupos)
+## 5. Header y Footer
 
-`src/components/layout/Header.tsx` y `Footer.tsx` aparecen en **todas** las páginas de la
-plataforma (se muestran una sola vez desde `src/app/layout.tsx`, el layout raíz de Next.js).
+Los archivos compartidos:
 
-- Ya vienen con un contenido de ejemplo para que el proyecto se vea bien desde el día 1.
-- El contenido final (qué logo, qué links, qué información del footer) lo **acuerdan entre
-  los 9 grupos** en conjunto — no lo decide un solo grupo por su cuenta.
-- Una vez acordado, **una sola persona** (o el platform team) implementa el cambio en esos
-  dos archivos. Si después hace falta ajustar algo, se propone como Pull Request y lo
-  revisa el platform team antes de aprobarlo — así evitamos que 9 grupos editen el mismo
-  archivo al mismo tiempo y se pisen los cambios.
+```text
+src/components/layout/Header.tsx
+src/components/layout/Footer.tsx
+```
 
----
+aparecen en toda la aplicación mediante el layout raíz de Next.js.
 
-## 6. Reglas generales de trabajo en Git
+Como estos archivos afectan a todos los grupos:
 
-1. Nunca se trabaja directo sobre `main`. Cada cambio va en un branch corto:
-   `feature/<grupo>-<que-hace>` (ej. `feature/pagos-formulario-checkout`).
-2. Al terminar, se abre un Pull Request contra `main`. Se recomienda que lo revise alguien
-   de otro grupo o el platform team antes de aprobar el merge.
-3. Traten de integrar seguido (cambios chicos y frecuentes) en vez de acumular todo el
-   trabajo para el final — así los conflictos, si aparecen, son fáciles de resolver.
-4. Si su cambio *solo* toca `app/<su-ruta>/` y `modules/<su-módulo>/`, prácticamente no
-   deberían tener conflictos de Git con otros grupos.
+1. su contenido debe acordarse entre los equipos;
+2. idealmente una sola persona o el Platform Team realiza el cambio;
+3. los cambios posteriores deberían hacerse mediante Pull Request.
+
+Esto evita conflictos donde varios grupos modifican simultáneamente los mismos archivos.
 
 ---
 
-## 7. Conectar con su microservicio: todo pasa por el API Gateway
+## 6. Reglas generales de Git
 
-**El front NO conoce las URLs de los 9 microservicios individuales.** Solo conoce una
-única puerta de entrada: el **API Gateway**. Es el Gateway el que sabe internamente a qué
-microservicio reenviar cada petición según el path (ej. `/api/pagos/*` → servicio de
-Pagos, `/api/catalogo/*` → servicio de Catálogo).
+Nunca se trabaja directo sobre `main`.
 
-Esto está resuelto en `src/lib/env.ts`, que expone una sola constante `GATEWAY_URL`.
-Solo necesitan definirla en `.env.local` (ver sección 1) y usar las funciones de su propio
-`modules/<su-módulo>/api.ts` para llamar a su API — cada una ya apunta al Gateway con el
-path correcto para su módulo.
+Cada cambio debería realizarse en una rama:
 
-Ejemplo (ya armado en `modules/catalogo/api.ts`):
+```text
+feature/<grupo>-<descripcion>
+```
+
+Ejemplo:
+
+```text
+feature/pagos-formulario-checkout
+```
+
+Luego:
+
+```text
+branch
+  ↓
+Pull Request
+  ↓
+revisión
+  ↓
+main
+```
+
+Es preferible realizar cambios pequeños e integrarlos frecuentemente en lugar de acumular muchos cambios durante varias semanas.
+
+---
+
+## 7. Comunicación con el backend
+
+El front utiliza **un único API Gateway**.
+
+```text
+Front
+  │
+  │ HTTP
+  ▼
+API Gateway
+  │
+  ├── Auth
+  ├── Catálogo
+  ├── Entradas
+  ├── Pagos
+  ├── Check-in
+  ├── Reseñas
+  ├── Organizador
+  ├── Notificaciones
+  └── Promociones
+```
+
+El front solamente conoce:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+```
+
+El archivo `src/lib/env.ts` expone:
+
+```ts
+export const GATEWAY_URL =
+  process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:8080";
+```
+
+Cada módulo agrega su propio path.
+
+---
+
+## 8. Paths de los 9 módulos
+
+La convención acordada es:
+
+| Grupo                 | Path en el Gateway    |
+| --------------------- | --------------------- |
+| Auth                  | `/api/auth`           |
+| Catálogo              | `/api/catalogo`       |
+| Entradas / Inventario | `/api/entradas`       |
+| Pagos                 | `/api/pagos`          |
+| Check-in              | `/api/checkin`        |
+| Reseñas               | `/api/resenas`        |
+| Panel organizador     | `/api/organizador`    |
+| Notificaciones        | `/api/notificaciones` |
+| Promociones           | `/api/promociones`    |
+
+Por ejemplo, Catálogo usa:
 
 ```ts
 import { GATEWAY_URL } from "@/lib/env";
@@ -191,85 +334,419 @@ import { GATEWAY_URL } from "@/lib/env";
 const BASE_PATH = "/api/catalogo";
 
 export async function buscarEventos(query?: string) {
-  const res = await fetch(`${GATEWAY_URL}${BASE_PATH}/eventos?q=${query ?? ""}`);
+  const url = query
+    ? `${GATEWAY_URL}${BASE_PATH}/eventos?q=${encodeURIComponent(query)}`
+    : `${GATEWAY_URL}${BASE_PATH}/eventos`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error("Error al conectar con el módulo de catálogo");
+  }
+
   return res.json();
 }
 ```
 
-**No hardcodeen la URL de un microservicio en ningún archivo, ni siquiera en `api.ts`.**
-Siempre se llama a `GATEWAY_URL` + el path de su módulo. Si algún día cambia dónde vive un
-microservicio, el front no se entera — es problema exclusivo del Gateway.
+Si:
 
-Esto también significa que **CORS solo se configura una vez, en el Gateway** — ningún
-microservicio individual necesita configurar CORS para el front.
+```text
+GATEWAY_URL = http://localhost:8080
+```
+
+el navegador enviará:
+
+```text
+GET http://localhost:8080/api/catalogo/eventos
+```
+
+El Gateway recibe la petición y sabe que `/api/catalogo/*` pertenece al microservicio de Catálogo.
 
 ---
 
-## 8. Build y ejecución (producción, sin Docker)
+## 9. Flujo completo de una petición
 
-Para generar la versión optimizada de producción (la que realmente se entrega/despliega,
-no la de desarrollo):
+Ejemplo: el usuario abre el catálogo y el front necesita obtener los eventos.
 
-```bash
-npm run build   # compila el proyecto para producción
-npm run start   # sirve la versión compilada en http://localhost:3000
+### Paso 1 — Front
+
+```ts
+fetch(`${GATEWAY_URL}/api/catalogo/eventos`);
 ```
 
-Diferencia clave: `npm run dev` es para programar (recarga rápido, pero es más lento en
-ejecución); `npm run build` + `npm run start` es la versión final, optimizada, la misma
-que corre dentro del contenedor Docker (sección 9).
+Con:
 
-Antes de hacer un Pull Request grande o entregar un avance, es buena práctica correr
-`npm run build` localmente al menos una vez — si hay un error de TypeScript o de import
-que `npm run dev` no mostró, `build` sí lo va a detectar.
+```text
+GATEWAY_URL=http://localhost:8080
+```
+
+la petición queda:
+
+```text
+GET http://localhost:8080/api/catalogo/eventos
+```
+
+### Paso 2 — API Gateway
+
+El Gateway reconoce `/api/catalogo` y reenvía la petición al microservicio de Catálogo.
+
+Por ejemplo, internamente podría tener:
+
+```text
+CATALOGO_SERVICE_URL=http://catalogo-service:3000
+```
+
+El Gateway reenvía:
+
+```text
+GET /api/catalogo/eventos
+```
+
+### Paso 3 — Microservicio
+
+Catálogo procesa la petición y responde.
+
+### Paso 4 — Gateway
+
+El Gateway recibe la respuesta y la devuelve al front.
+
+### Paso 5 — Front
+
+El navegador recibe los datos y actualiza la interfaz.
+
+Flujo completo:
+
+```text
+Navegador
+   │
+   │ GET /api/catalogo/eventos
+   ▼
+API Gateway :8080
+   │
+   ▼
+Microservicio Catálogo
+   │
+   ▼
+API Gateway
+   │
+   ▼
+Navegador
+```
 
 ---
 
-## 9. Dockerización
+## 10. Regla importante: no acceder directamente a un microservicio
 
-Los 9 microservicios van a correr en Docker, cada uno con su propio `docker-compose.yml`
-(uno por grupo de backend). El front también corre en Docker, con el `Dockerfile` y el
-`docker-compose.yml` ya incluidos en este repo.
+Esto está mal:
 
-### Levantar el front en Docker
-
-```bash
-docker compose up --build
+```ts
+fetch("http://localhost:3002/eventos");
 ```
 
-Esto compila la imagen (`npm install` + `npm run build` dentro del contenedor) y levanta
-el front en `http://localhost:3000`, igual que en producción.
+También está mal:
 
-### La parte importante: cómo se conecta con el Gateway y los microservicios
+```ts
+fetch("http://catalogo-service:3000/eventos");
+```
 
-Como cada equipo (front, Gateway, cada uno de los 9 microservicios) tiene su **propio**
-`docker-compose.yml`, por defecto Docker los aísla en redes separadas — el contenedor del
-front no podría "ver" al contenedor del Gateway aunque ambos estén corriendo en la misma
-máquina.
+El front nunca debe conocer esas direcciones.
 
-Para que sí puedan comunicarse, todos deben conectarse a una **red de Docker compartida y
-externa**, creada una sola vez, independiente de cualquier `docker-compose.yml` individual:
+Debe utilizar:
+
+```ts
+fetch(`${GATEWAY_URL}/api/catalogo/eventos`);
+```
+
+Esto permite cambiar la ubicación interna de un microservicio sin modificar el front.
+
+---
+
+## 11. CORS
+
+CORS se configura centralmente en el API Gateway.
+
+Por lo tanto, la comunicación relevante para el navegador es:
+
+```text
+Front → Gateway
+```
+
+Los microservicios no necesitan habilitar CORS específicamente para el navegador, porque el navegador no debería acceder directamente a ellos.
+
+---
+
+## 12. Build de producción sin Docker
+
+Antes de compilar deben existir las variables de entorno.
+
+En Linux, macOS o Git Bash:
+
+```bash
+cp .env.example .env.local
+```
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Después:
+
+```bash
+npm run build
+npm run start
+```
+
+El front quedará disponible en:
+
+```text
+http://localhost:3000
+```
+
+### Importante sobre `NEXT_PUBLIC_*`
+
+Las variables de Next.js cuyo nombre comienza con `NEXT_PUBLIC_` son utilizadas por código que puede ejecutarse en el navegador.
+
+Por eso deben tener su valor correcto **antes de ejecutar**:
+
+```bash
+npm run build
+```
+
+No basta con cambiar la variable después de que el proyecto ya fue compilado.
+
+---
+
+## 13. Docker
+
+El front tiene su propio `Dockerfile` y `docker-compose.yml`.
+
+El API Gateway tiene otro `docker-compose.yml`. RabbitMQ también se levanta desde el repositorio de backend/infraestructura. Cada uno de los 9 microservicios tendrá su propio `docker-compose.yml`.
+
+Aun así, todos forman parte del mismo ecosistema.
+
+### 13.1 Crear la red compartida
+
+Todos los componentes utilizan una red externa llamada:
+
+```text
+plataforma-eventos-net
+```
+
+Debe crearse una sola vez por máquina:
 
 ```bash
 docker network create plataforma-eventos-net
 ```
 
-Esto solo se hace **una vez** por máquina (o una vez en el servidor/ambiente de integración
-donde levanten todo junto). Después, cada `docker-compose.yml` — el del front, el del
-Gateway, y el de cada uno de los 9 microservicios — declara esa misma red como `external`
-(el `docker-compose.yml` del front ya viene configurado así). Así, todos los contenedores
-quedan en la misma red aunque se levanten con comandos `docker compose up` distintos, desde
-carpetas distintas.
+Si ya existe, no es necesario volver a crearla.
 
-Una vez que el Gateway esté corriendo en esa red compartida, actualicen
-`NEXT_PUBLIC_GATEWAY_URL` para apuntar al **nombre del servicio** del Gateway dentro de esa
-red (no a `localhost`) — por ejemplo, si el servicio del Gateway se llama `gateway` en su
-`docker-compose.yml`, la URL dentro de la red Docker sería algo como
-`http://gateway:8080`. Pregúntenle al equipo/persona a cargo del Gateway cuál es el nombre
-exacto de su servicio y en qué puerto expone la API.
+### 13.2 Configurar el Gateway que utilizará el front
 
-**Resumen del orden para levantar todo el ecosistema:**
-1. Crear la red compartida (una sola vez): `docker network create plataforma-eventos-net`
-2. Levantar el API Gateway (su propio `docker-compose.yml`, conectado a esa red)
-3. Levantar los 9 microservicios (cada uno con su propio `docker-compose.yml`, conectados a esa red)
-4. Levantar el front: `docker compose up --build` (ya conectado a esa red)
+Para Docker Compose, creen `.env` a partir del ejemplo.
+
+En Linux, macOS o Git Bash:
+
+```bash
+cp .env.example .env
+```
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Por defecto contiene:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+```
+
+Luego ejecuten:
+
+```bash
+docker compose up --build
+```
+
+El front quedará disponible en:
+
+```text
+http://localhost:3000
+```
+
+### 13.3 ¿Por qué `localhost:8080` y no `gateway:8080`?
+
+Gran parte de las llamadas del front se ejecutan desde el **navegador del usuario**.
+
+El navegador conoce direcciones como:
+
+```text
+localhost
+192.168.x.x
+api.midominio.cl
+```
+
+pero normalmente no conoce nombres DNS internos creados por Docker, como:
+
+```text
+gateway
+catalogo-service
+pagos-service
+```
+
+Por eso esto no debe utilizarse como URL pública del front:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://gateway:8080
+```
+
+En desarrollo local se utiliza:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+```
+
+El puerto `8080` del Gateway debe estar publicado hacia la máquina host.
+
+### 13.4 Entonces, ¿para qué sirve `plataforma-eventos-net`?
+
+La red Docker sigue siendo necesaria para la comunicación interna del backend.
+
+Por ejemplo:
+
+```text
+API Gateway
+     │
+     ├── http://auth-service:3000
+     ├── http://catalogo-service:3000
+     ├── http://entradas-service:3000
+     ├── http://pagos-service:3000
+     └── ...
+```
+
+Esos nombres sí funcionan porque Gateway y microservicios están dentro de la misma red Docker.
+
+Por eso todos los `docker-compose.yml` deben declarar:
+
+```yaml
+networks:
+  plataforma-eventos-net:
+    external: true
+```
+
+### 13.5 Desarrollo local
+
+Si todo se ejecuta en el mismo computador:
+
+```text
+Front:    http://localhost:3000
+Gateway:  http://localhost:8080
+```
+
+Entonces:
+
+```env
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+```
+
+### 13.6 Ambiente remoto
+
+Si el proyecto se despliega en un servidor, no utilicen automáticamente `localhost:8080`, porque para una persona que abre TicketU desde otro computador, `localhost` sería su propio computador.
+
+En ese caso debe utilizarse una dirección accesible desde el navegador, por ejemplo:
+
+```text
+http://192.168.1.50:8080
+```
+
+o:
+
+```text
+https://api.ticketu.cl
+```
+
+dependiendo del ambiente utilizado por el curso.
+
+---
+
+## 14. Orden para levantar TicketU con Docker
+
+La primera vez:
+
+```bash
+docker network create plataforma-eventos-net
+```
+
+Después:
+
+1. Levantar RabbitMQ desde el repositorio de backend.
+2. Levantar el único API Gateway compartido.
+3. Levantar los microservicios disponibles.
+4. Levantar el front:
+
+```bash
+docker compose up --build
+```
+
+---
+
+## 15. Gateway y RabbitMQ cumplen funciones distintas
+
+Para comunicación HTTP:
+
+```text
+Front → Gateway → Microservicio
+```
+
+Para comunicación asíncrona entre microservicios:
+
+```text
+Microservicio → RabbitMQ → otro microservicio
+```
+
+Ejemplo:
+
+```text
+Pagos
+  │
+  │ publica pago.realizado
+  ▼
+RabbitMQ
+  │
+  ▼
+Notificaciones
+```
+
+RabbitMQ no reemplaza al Gateway.
+
+El Gateway se utiliza para peticiones HTTP que necesitan una respuesta. RabbitMQ se utiliza para publicar eventos que pueden ser procesados de forma asíncrona por otros servicios.
+
+El front **no se conecta directamente a RabbitMQ**.
+
+---
+
+## 16. Reglas principales del front
+
+1. El front conoce **una sola URL de backend**: `NEXT_PUBLIC_GATEWAY_URL`.
+2. Nunca se escriben directamente URLs de microservicios.
+3. Cada módulo utiliza `GATEWAY_URL + /api/<modulo>/...`.
+4. Los paths oficiales son:
+
+```text
+/api/auth
+/api/catalogo
+/api/entradas
+/api/pagos
+/api/checkin
+/api/resenas
+/api/organizador
+/api/notificaciones
+/api/promociones
+```
+
+5. CORS se configura en el Gateway.
+6. Todos los componentes Docker del ecosistema utilizan `plataforma-eventos-net`.
+7. Cada grupo mantiene la lógica de su propio módulo.
+8. Las modificaciones a componentes compartidos deben coordinarse entre los grupos o con el Platform Team.
