@@ -66,5 +66,8 @@ CREATE INDEX IF NOT EXISTS idx_notificacion_usuario
     ON public.notificacion(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_notificacion_no_leidas
     ON public.notificacion(id_usuario) WHERE estado_lectura = 'NO_LEIDA';
+CREATE INDEX IF NOT EXISTS idx_notificacion_app_usuario_fecha
+    ON public.notificacion (id_usuario, created_at DESC)
+    WHERE canal = 'APP' AND estado_lectura <> 'ELIMINADA' AND fecha_eliminacion IS NULL;
 CREATE INDEX IF NOT EXISTS idx_envios_notificacion
     ON public.envios_notificacion(id_notificacion);
