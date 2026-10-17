@@ -88,7 +88,7 @@ export default function NotificacionesPlaceholder() {
 
   async function al_eliminar(ids_notificacion: Array<string | number>) {
     try {
-      await eliminar_notificaciones(usuarioId, ids_notificacion);
+      await eliminar_notificaciones(ids_notificacion);
       const ids_eliminados = new Set(ids_notificacion.map(String));
       const visibles = notificaciones.filter(
         (notificacion) => !ids_eliminados.has(String(notificacion.id_notificacion))

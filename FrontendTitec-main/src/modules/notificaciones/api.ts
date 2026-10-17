@@ -1,9 +1,7 @@
 // ============================================================================
 // modules/notificaciones/api.ts
 // ----------------------------------------------------------------------------
-// Todas las llamadas de este módulo pasan por el API Gateway, nunca
-// directo al microservicio de notificaciones. El Gateway es quien enruta
-// internamente la petición al servicio correcto según el path.
+// Este módulo usa el API Gateway igual que el resto de la aplicación.
 // ============================================================================
 
 import { GATEWAY_URL } from "@/lib/env";
@@ -29,14 +27,22 @@ export async function obtener_notificaciones(
   if (!res.ok) {
     throw new Error("Error al obtener las notificaciones del usuario");
   }
-  return res.json();
+  const notificaciones = (await res.json()) as Notificacion[];
+  return notificaciones.map((notificacion) => ({
+    ...notificacion,
+    estado: notificacion.estado.toLowerCase() as Notificacion["estado"],
+  }));
 }
 
-async function solicitar_actualizacion(url: string, body: unknown): Promise<void> {
+async function solicitar_actualizacion(
+  url: string,
+  method: "POST" | "DELETE",
+  body?: unknown
+): Promise<void> {
   const res = await fetch(url, {
-    method: "PATCH",
+    method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!res.ok) {
     throw new Error("No se pudo actualizar la notificación");
@@ -47,24 +53,28 @@ export async function marcar_notificacion_leida(
   id_notificacion: string | number
 ): Promise<void> {
   await solicitar_actualizacion(
-    `${GATEWAY_URL}${BASE_PATH}/${encodeURIComponent(String(id_notificacion))}`,
-    { estado: "leida" }
+    `${GATEWAY_URL}${BASE_PATH}/${encodeURIComponent(String(id_notificacion))}/leida`,
+    "POST"
   );
 }
 
 export async function marcar_todas_leidas(usuarioId: string): Promise<void> {
-  await solicitar_actualizacion(`${GATEWAY_URL}${BASE_PATH}/marcar-leidas`, {
-    usuarioId,
-  });
+  await solicitar_actualizacion(
+    `${GATEWAY_URL}${BASE_PATH}/marcar-todas-leidas`,
+    "POST",
+    { usuarioId }
+  );
 }
 
 export async function eliminar_notificaciones(
-  usuarioId: string,
   ids_notificacion: Array<string | number>
 ): Promise<void> {
-  await solicitar_actualizacion(`${GATEWAY_URL}${BASE_PATH}/eliminar`, {
-    usuarioId,
-    ids_notificacion,
-    estado: "eliminada",
-  });
+  await Promise.all(
+    ids_notificacion.map((id_notificacion) =>
+      solicitar_actualizacion(
+        `${GATEWAY_URL}${BASE_PATH}/${encodeURIComponent(String(id_notificacion))}`,
+        "DELETE"
+      )
+    )
+  );
 }
