@@ -1,7 +1,7 @@
 # Diagrama Relacional - Notificaciones
 
 ## Diagrama Final
-<img width="3161" height="1515" alt="diagrama er" src="https://github.com/user-attachments/assets/f539229d-9bba-45a4-9948-112abd142606" />
+<img width="3167" height="1528" alt="diagrama er" src="https://github.com/user-attachments/assets/5d99d0ea-4e10-43e5-96b2-a06aa3954012" />
 
 **Cambios**
 
