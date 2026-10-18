@@ -1,15 +1,10 @@
 # Diagrama Relacional - Notificaciones
 
-## Diagrama Inicial (Actual)
-<img width="3167" height="1757" alt="Diagramav1" src="https://github.com/user-attachments/assets/41b51f3c-7026-4603-a21a-3e62614fcf0b" />
-
----
-
-## Diagrama Final (Propuesta)
-<img width="3171" height="1560" alt="Diagramav2" src="https://github.com/user-attachments/assets/77df6bc6-a1fc-48a0-bf35-7c0d41664988" />
+## Diagrama Final
+<img width="3161" height="1515" alt="diagrama er" src="https://github.com/user-attachments/assets/f539229d-9bba-45a4-9948-112abd142606" />
 
 **Cambios**
-* Se elimina la tabla que guarda datos desde **AUTH** con el propósito de que se manejen desde el backend únicamente
+
 * Muchos de los datos recibidos desde **ENTRADAS** son enviados únicamente por correo, solo dejamos en la base de datos los que necesitamos para las modificaciones realizadas por **PANEL** y su respuesta, el resto se alojan en el archivo json de la tabla `notificacion` 
 
 ---
