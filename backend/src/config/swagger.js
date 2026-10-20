@@ -1,64 +1,49 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const { PORT } = require('./env');
-/**
- * Configuración de Swagger/OpenAPI para los servicios del módulo de Notificaciones.
- *
- * Documenta los servicios HTTP propios y los contratos de eventos asíncronos
- * publicados mediante broker.
- */
+
+const TIPOS = [
+    'COMPRA', 'RECORDATORIO', 'RECORDATORIO_24H', 'RECORDATORIO_30M',
+    'INICIO_EVENTO', 'EVENTO_CAMBIO', 'CAMBIO_EVENTO', 'CANCELACION_EVENTO',
+    'RECUPERACION_PASSWORD', 'CREACION_STAFF'
+];
+
 const options = {
     definition: {
         openapi: '3.0.0',
         info: {
             title: 'API de Notificaciones - TITEC',
-            version: '1.0.0',
-            description:
-                'Servicios propios del módulo de Notificaciones: creación, consulta, ' +
-                'marcado como leída/leídas y eliminación de notificaciones del centro de ' +
-                'notificaciones del usuario. También se documentan como referencia los ' +
-                'contratos de eventos asíncronos que Notificaciones publica hacia Auth y Panel mediante broker.'
+            version: '1.1.0',
+            description: 'API del módulo de Notificaciones integrado con Supabase, AUTH, Entradas y PANEL.'
         },
-        servers: [
-            {
-                url: `http://localhost:${PORT}`,
-                description: 'Servidor local'
-            }
-        ],
+        servers: [{ url: `http://localhost:${PORT}`, description: 'Servidor local' }],
         components: {
             schemas: {
                 Notificacion: {
                     type: 'object',
                     properties: {
-                        id_notificacion: { type: 'string', example: 'NOT-1732550000000-4821' },
-                        usuario_id: { type: 'string', example: 'USR-123' },
-                        tipo: {
-                            type: 'string',
-                            enum: ['COMPRA', 'RECORDATORIO', 'EVENTO_CAMBIO', 'RECUPERACION_PASSWORD']
-                        },
-                        titulo: { type: 'string', example: 'Tienes 2 entradas para Concierto Tini' },
+                        id_notificacion: { type: 'integer', format: 'int64', example: 1 },
+                        id_usuario: { type: 'string', example: 'usr123' },
+                        tipo: { type: 'string', enum: TIPOS },
                         mensaje: { type: 'string', example: 'Tu compra fue confirmada.' },
                         datos: { type: 'object', additionalProperties: true },
-                        fecha_emision: { type: 'string', format: 'date-time' },
-                        estado: { type: 'string', enum: ['NO_LEIDA', 'LEIDA', 'ELIMINADA'] },
-                        fecha_lectura: { type: 'string', format: 'date-time', nullable: true },
+                        estado_lectura: { type: 'string', enum: ['NO_LEIDA', 'LEIDA', 'ELIMINADA'] },
                         fecha_eliminacion: { type: 'string', format: 'date-time', nullable: true },
-                        intentos_envio: { type: 'integer', example: 0 },
-                        error_envio: { type: 'string', nullable: true }
+                        canal: { type: 'string', enum: ['APP', 'EMAIL'] },
+                        created_at: { type: 'string', format: 'date-time' }
                     }
                 },
                 NuevaNotificacion: {
                     type: 'object',
-                    required: ['usuarioId', 'tipo', 'titulo', 'mensaje'],
+                    required: ['tipo', 'mensaje'],
                     properties: {
-                        usuarioId: { type: 'string', example: 'USR-123' },
-                        tipo: {
-                            type: 'string',
-                            enum: ['COMPRA', 'RECORDATORIO', 'EVENTO_CAMBIO', 'RECUPERACION_PASSWORD']
-                        },
-                        titulo: { type: 'string', example: 'Tienes 2 entradas para Concierto Tini' },
+                        usuarioId: { type: 'string', example: 'usr123' },
+                        id_usuario: { type: 'string', example: 'usr123' },
+                        tipo: { type: 'string', enum: TIPOS },
                         mensaje: { type: 'string', example: 'Tu compra fue confirmada.' },
-                        datos: { type: 'object', additionalProperties: true }
-                    }
+                        datos: { type: 'object', additionalProperties: true },
+                        canal: { type: 'string', enum: ['APP', 'EMAIL'], default: 'APP' }
+                    },
+                    description: 'Debe enviarse usuarioId o id_usuario, además de tipo y mensaje.'
                 },
                 ErrorRespuesta: {
                     type: 'object',
@@ -69,63 +54,43 @@ const options = {
                 },
                 AuthResultadoNotificacion: {
                     type: 'object',
-                    description:
-                        'Contrato del evento asíncrono publicado por Notificaciones hacia Auth mediante broker en el tópico notificaciones.auth.resultado. No constituye un endpoint HTTP.',
+                    description: 'Resultado publicado por Notificaciones hacia AUTH en notificaciones.auth.resultado.',
                     properties: {
-                        email_destino: {
-                            type: 'string',
-                            format: 'email',
-                            example: 'usuario@ejemplo.com'
-                        },
-                        estado_envio: {
-                            type: 'string',
-                            enum: ['exitoso', 'error'],
-                            example: 'exitoso'
-                        },
-                        error_envio: {
-                            type: 'string',
-                            nullable: true,
-                            example: 'No fue posible enviar el correo'
-                        }
+                        email_destino: { type: 'string', format: 'email', example: 'usuario@ejemplo.com' },
+                        gmail_destino: { type: 'string', format: 'email', nullable: true },
+                        estado_envio: { type: 'string', enum: ['exitoso', 'error'] },
+                        error_envio: { type: 'string', nullable: true }
                     }
                 },
                 PanelResultadoNotificacion: {
                     type: 'object',
-                    description:
-                        'Contrato del evento asíncrono publicado por Notificaciones hacia Panel Organizador mediante broker en el tópico notificaciones.panel.resultado. No constituye un endpoint HTTP.',
+                    description: 'Resumen de cambios de evento; se publica en notificaciones.panel.resultado y notificaciones.auth.resultado.',
                     properties: {
-                        id_evento: {
-                            type: 'integer',
-                            example: 123
-                        },
-                        estado_envio: {
-                            type: 'string',
-                            enum: ['exitoso', 'error'],
-                            example: 'exitoso'
-                        },
-                        usuarios_notificados: {
-                            type: 'integer',
-                            example: 15
-                        },
-                        usuarios_faltantes: {
-                            type: 'integer',
-                            example: 2
-                        },
-                        fecha_envio: {
-                            type: 'string',
-                            format: 'date-time',
-                            example: '2026-09-25T18:30:00.000Z'
-                        },
-                        mensaje: {
-                            type: 'string',
-                            example: 'Envío realizado correctamente'
-                        }
+                        tipo_respuesta: { type: 'string', example: 'evento_actualizado' },
+                        id_evento: { type: 'string', example: 'ev23' },
+                        titulo: { type: 'string', example: 'Evento actualizado' },
+                        mensaje: { type: 'string', example: 'El estado del evento ha sido actualizado correctamente.' },
+                        estado_envio: { type: 'string', enum: ['exitoso', 'parcial', 'error'] },
+                        usuarios_notificados: { type: 'integer', example: 150 },
+                        usuarios_no_notificados: { type: 'integer', example: 0 },
+                        fecha_envio: { type: 'string', example: '1 de octubre de 2026, 13:30' },
+                        fecha_envio_iso: { type: 'string', format: 'date-time' }
+                    }
+                },
+                ResultadoEnvio: {
+                    type: 'object',
+                    properties: {
+                        id_envio: { type: 'integer', format: 'int64' },
+                        id_notificacion: { type: 'integer', format: 'int64' },
+                        estado_envio: { type: 'string', enum: ['PENDIENTE', 'ENVIADO', 'ERROR'] },
+                        intento: { type: 'integer' },
+                        error: { type: 'string', nullable: true },
+                        created_at: { type: 'string', format: 'date-time' }
                     }
                 }
             }
         }
     },
-    // Swagger-jsdoc lee los comentarios @swagger de estos archivos.
     apis: ['./src/routes/*.js']
 };
 

@@ -2,127 +2,115 @@ const notificacionService = require('../services/notificacionService');
 const canalEnvioService = require('../services/canalEnvioService');
 const emailService = require('../services/emailService');
 const broker = require('../broker');
-const {
-    planificarRecordatorio,
-    formatearFechaEvento,
-    programarTrabajoRecordatorio
-} = require('../jobs/notificacionJobs');
+const { planificarRecordatorio, programarTrabajoRecordatorio } = require('../jobs/notificacionJobs');
 
-// Procesa entradas_emitidas: confirma la compra por correo y programa el recordatorio web.
+// Procesa la compra recibida desde Entradas/RabbitMQ.
 async function manejarEntradaEmitida(evento) {
     validar(evento);
-
     const {
         correo_comprador: correoComprador,
         nombre_comprador: nombreComprador,
+        id_usuario: idUsuario,
         id_evento: idEvento,
         nombre_evento: nombreEvento,
         fecha_evento: fechaEvento,
         hora_evento: horaEvento,
-        qr_data: qrData
+        qr_data: qrData,
+        cantidad_entradas: cantidadEntradas = 1,
+        ubicacion_evento: ubicacionEvento
     } = evento;
 
     const plan = planificarRecordatorio(fechaEvento, horaEvento);
-    if (plan.fechaEvento.getTime() <= Date.now()) {
-        throw new Error('No se puede programar un recordatorio para un evento que ya ocurrió.');
+    const pool = require('../config/database').getPool();
+    const fechaPersistir = evento.fecha_evento.includes('T')
+        ? evento.fecha_evento
+        : `${evento.fecha_evento}T${horaEvento}:00`;
+
+    if (pool) {
+        await pool.query(
+            `INSERT INTO public.entradas_usuario
+                (id_usuario, id_evento, correo_comprador, nombre_evento, fecha_evento)
+             VALUES ($1, $2, $3, $4, $5::timestamptz)
+             ON CONFLICT (id_usuario, id_evento) DO UPDATE SET
+                correo_comprador = EXCLUDED.correo_comprador,
+                nombre_evento = EXCLUDED.nombre_evento,
+                fecha_evento = EXCLUDED.fecha_evento,
+                updated_at = NOW()`,
+            [String(idUsuario), String(idEvento), correoComprador, nombreEvento, fechaPersistir]
+        );
     }
 
-    const fechaEventoFormateada = formatearFechaEvento(fechaEvento);
-    const cuerpoCorreo = [
+    const datos = { ...evento };
+    const mensajeCompra = `Tu compra para ${nombreEvento} fue procesada. Fecha: ${fechaEvento}, hora: ${horaEvento}. Cantidad de entradas: ${cantidadEntradas}.`;
+    const notiApp = await notificacionService.crearNotificacion({
+        usuarioId: String(idUsuario), tipo: 'COMPRA', mensaje: mensajeCompra, canal: 'APP', datos
+    });
+    const notiEmail = await notificacionService.crearNotificacion({
+        usuarioId: String(idUsuario), tipo: 'COMPRA',
+        mensaje: `Confirmación de compra enviada a ${correoComprador}.`, canal: 'EMAIL', datos
+    });
+
+    const cuerpo = [
         `Hola ${nombreComprador},`,
         `Tu compra para el evento ${nombreEvento} fue registrada.`,
-        `Fecha del evento: ${fechaEventoFormateada}`,
+        `Fecha: ${fechaEvento}`,
         `Hora: ${horaEvento}`,
+        `Cantidad de entradas: ${cantidadEntradas}`,
         `Código QR: ${qrData}`
     ].join('\n');
 
-    let resultadoCorreo;
-    let errorCorreo;
+    let errorApp = null;
+    let errorCorreo = null;
     try {
-        resultadoCorreo = await emailService.enviarCorreoConReintentos(
-            correoComprador,
-            `Confirmación de entrada: ${nombreEvento}`,
-            cuerpoCorreo
+        await notificacionService.enviarConReintentos(
+            notiApp.id_notificacion, 'APP', n => canalEnvioService.enviarNotificacion(n), 3
+        );
+    } catch (error) {
+        errorApp = error;
+    }
+    try {
+        await notificacionService.enviarConReintentos(
+            notiEmail.id_notificacion, 'EMAIL', () => emailService.enviarCorreo(
+                correoComprador, `Confirmación de entrada: ${nombreEvento}`, cuerpo
+            ), 3
         );
     } catch (error) {
         errorCorreo = error;
     }
 
-    const estadoCorreo = errorCorreo
-        ? 'error'
-        : resultadoCorreo.simulado ? 'simulado' : 'enviado';
+    const estado = errorApp || errorCorreo ? 'error' : 'enviado';
+    await publicarConfirmacion(estado, [errorApp?.message, errorCorreo?.message].filter(Boolean).join(' | ') || 'Notificaciones procesadas correctamente.');
 
-    const emitirNotificacionWeb = async () => {
-        const notificacion = await notificacionService.crearNotificacion({
-            usuarioId: correoComprador,
-            tipo: 'RECORDATORIO',
-            titulo: `Recordatorio del evento ${nombreEvento}`,
-            mensaje: `Hola ${nombreComprador}, recuerda tu evento ${nombreEvento} el ${fechaEventoFormateada} a las ${horaEvento}.`,
-            datos: {
-                correoComprador,
-                nombreComprador,
-                idEvento,
-                nombreEvento,
-                fechaEvento: fechaEventoFormateada,
-                horaEvento,
-                qrData
-            }
+    // Recordatorio APP: si faltan menos de 24 horas, se registra inmediatamente; si no,
+    // se programa en memoria para la fecha correspondiente (no sobrevive reinicios del proceso).
+    const crearRecordatorio = async () => {
+        const recordatorio = await notificacionService.crearNotificacion({
+            usuarioId: String(idUsuario),
+            tipo: 'RECORDATORIO_24H',
+            mensaje: `Recuerda ${nombreEvento} el ${fechaEvento} a las ${horaEvento}${ubicacionEvento ? ` en ${ubicacionEvento}` : ''}.`,
+            canal: 'APP',
+            datos
         });
-
-        return notificacionService.enviarConReintentos(
-            notificacion.id_notificacion,
-            (n) => canalEnvioService.enviarNotificacion(n)
+        await notificacionService.enviarConReintentos(
+            recordatorio.id_notificacion, 'APP', n => canalEnvioService.enviarNotificacion(n), 3
         );
     };
-
-    if (plan.enviarAhora) {
-        let notificacion;
-        try {
-            notificacion = await emitirNotificacionWeb();
-        } catch (error) {
-            await publicarConfirmacion('error', error.message);
-            throw error;
-        }
-
-        const mensajeCorreo = errorCorreo
-            ? `Falló el correo inmediato para ${correoComprador}: ${errorCorreo.message}.`
-            : `Correo ${estadoCorreo} inmediatamente para ${correoComprador}.`;
-        await publicarConfirmacion(
-            errorCorreo ? 'error' : estadoCorreo,
-            `${mensajeCorreo} Recordatorio web emitido.`
-        );
-        return {
-            estado: errorCorreo ? 'error' : estadoCorreo,
-            correo: estadoCorreo,
-            error_correo: errorCorreo?.message,
-            notificacion
-        };
+    if (plan.enviarAhora && plan.fechaEvento.getTime() > Date.now()) {
+        await crearRecordatorio().catch(error => console.error('[entradaEmitidaHandler] error en recordatorio:', error.message));
+    } else if (plan.fechaEnvio && plan.fechaEnvio.getTime() > Date.now()) {
+        programarTrabajoRecordatorio(plan.fechaEnvio, crearRecordatorio);
     }
 
-    programarTrabajoRecordatorio(plan.fechaEnvio, async () => {
-        try {
-            await emitirNotificacionWeb();
-            await publicarConfirmacion(
-                'enviado',
-                `Recordatorio web emitido para ${nombreEvento} el ${fechaEventoFormateada}.`
-            );
-        } catch (error) {
-            await publicarConfirmacion('error', error.message);
-            throw error;
-        }
-    });
-
-    const fechaEnvio = `${fechaEventoFormateada} ${horaEvento}`;
-    const mensaje = errorCorreo
-        ? `Falló el correo inmediato para ${correoComprador}: ${errorCorreo.message}. Recordatorio web programado para 24 horas antes.`
-        : `Correo ${estadoCorreo} inmediatamente para ${correoComprador}. Recordatorio web programado para ${fechaEnvio} menos 24 horas.`;
-    await publicarConfirmacion(errorCorreo ? 'error' : estadoCorreo, mensaje);
     return {
-        estado: 'programado',
-        correo: estadoCorreo,
+        estado,
+        id_usuario: String(idUsuario),
+        id_evento: String(idEvento),
+        notificacion_app: notiApp,
+        notificacion_email: notiEmail,
+        estado_correo: errorCorreo ? 'error' : 'exitoso',
         error_correo: errorCorreo?.message,
-        fecha_envio: plan.fechaEnvio.toISOString(),
-        mensaje
+        estado_app: errorApp ? 'error' : 'exitoso',
+        error_app: errorApp?.message
     };
 }
 
@@ -135,16 +123,17 @@ async function publicarConfirmacion(estado, mensaje) {
 }
 
 function validar(evento) {
-    if (!evento || (evento.tipo && evento.tipo !== 'entradas_emitidas')) {
-        throw new Error('Evento inválido: se esperaba tipo "entradas_emitidas"');
+    if (!evento || typeof evento !== 'object' || Array.isArray(evento) ||
+        (evento.tipo && evento.tipo !== 'entradas_emitidas')) {
+        throw new Error('Evento inválido: se esperaba el evento "entradas_emitidas".');
     }
     const requeridos = [
-        'correo_comprador', 'nombre_comprador', 'nombre_evento', 'id_evento',
+        'correo_comprador', 'nombre_comprador', 'id_usuario', 'nombre_evento', 'id_evento',
         'fecha_evento', 'hora_evento', 'qr_data'
     ];
     for (const campo of requeridos) {
-        if (evento[campo] === undefined || evento[campo] === null) {
-            throw new Error(`Evento "entrada_emitida" inválido: falta el campo "${campo}"`);
+        if (evento[campo] === undefined || evento[campo] === null || String(evento[campo]).trim() === '') {
+            throw new Error(`Evento "entradas_emitidas" inválido: falta el campo "${campo}".`);
         }
     }
 }
