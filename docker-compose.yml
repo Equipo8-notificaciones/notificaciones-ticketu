@@ -1,0 +1,87 @@
+# Ejecutar desde la carpeta raíz Notificaciones-Ticketu.
+# Frontend: http://localhost:3000
+# Backend de Notificaciones: http://localhost:3001
+# Panel de RabbitMQ: http://localhost:15672
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-ticketu}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-ticketu_dev}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  notificaciones:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: "3000"
+      BROKER_MODE: rabbitmq
+      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672
+      DATABASE_URL: ${DATABASE_URL:-}
+      DB_SSL: ${DB_SSL:-true}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    ports:
+      - "3001:3000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ./Front
+      args:
+        # Directo al backend de Notificaciones para probar el módulo de este equipo.
+        NEXT_PUBLIC_GATEWAY_URL: ${NEXT_PUBLIC_GATEWAY_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      notificaciones:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Se ejecuta solo con: docker compose --profile test run --rm test-compra-entrada
+  test-compra-entrada:
+    profiles: ["test"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672
+      NOTIFICACIONES_URL: http://notificaciones:3000
+      TEST_TIMEOUT_MS: "30000"
+    command: ["node", "tests/test_compra_entrada_rabbitmq.js"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      notificaciones:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  rabbitmq_data:
