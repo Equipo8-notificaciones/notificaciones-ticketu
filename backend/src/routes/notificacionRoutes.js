@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notificacionService = require('../services/notificacionService');
+const { manejarEntradaEmitida } = require('../events/entradaEmitidaHandler');
 
 /**
  * @swagger
@@ -38,6 +39,15 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.post('/probar-entradas', async (req, res) => {
+    try {
+        const resultado = await manejarEntradaEmitida({ ...req.body, tipo: 'entradas_emitidas' });
+        res.status(201).json(resultado);
+    } catch (error) {
+        res.status(400).json({ error: 'Error al procesar datos de Entradas', detalle: error.message });
+    }
+});
+
 /**
  * @swagger
  * /api/notificaciones:
@@ -68,6 +78,8 @@ router.post('/', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorRespuesta'
  */
+router.get('/prueba/todas', async (req, res) => { try { res.json(await require('../repositories/notificacionRepository').findAll()); } catch (error) { res.status(500).json({ error: 'Error en mostrar notificaciones', detalle: error.message }); } });
+
 router.get('/', async (req, res) => {
     try {
         const notificaciones = await notificacionService.obtenerCentro(req.query.usuarioId);
@@ -104,6 +116,31 @@ router.get('/', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorRespuesta'
  */
+/**
+ * @swagger
+ * /api/notificaciones/{id}/envios:
+ *   get:
+ *     summary: Consultar los intentos de envío de una notificación
+ *     tags: [Notificaciones]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Historial de intentos con estado, número de intento y error si existe.
+ *       404:
+ *         description: Notificación no encontrada.
+ */
+router.get('/:id/envios', async (req, res) => {
+    try {
+        res.json(await notificacionService.obtenerEnvios(req.params.id));
+    } catch (error) {
+        res.status(404).json({ error: error.message });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         res.json(await notificacionService.obtenerPorId(req.params.id));

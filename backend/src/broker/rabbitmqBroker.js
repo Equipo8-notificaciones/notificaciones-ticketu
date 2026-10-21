@@ -1,14 +1,7 @@
-//Cliente RabbitMQ del módulo de Notificaciones.
-//Utiliza exchanges tipo topic para los eventos de integración.
-
-const EXCHANGE_GENERAL = 'titec.eventos';
-const EXCHANGE_AUTH = 'auth_events';
-
-const TOPICOS_EXCHANGE_AUTH = new Set(['recuperacion_cuenta', 'cuenta_staff']);
-
-function resolverExchange(topic) {
-    return TOPICOS_EXCHANGE_AUTH.has(topic) ? EXCHANGE_AUTH : EXCHANGE_GENERAL;
-}
+//Cliente RabbitMQ del módulo de Notificaciones
+//Utiliza un exchange tipo "topic" para publicar y suscribirse a los eventos definidos en 
+//los contratos de integración
+const EXCHANGE = 'titec.eventos';
 
 let connection;
 let channel;
@@ -16,31 +9,61 @@ let channel;
 async function conectar() {
     if (channel) return channel;
 
-    // Carga RabbitMQ al usar esta implementación.
+    // Carga RabbitMQ solo cuando se utiliza esta implementación.
     const amqplib = require('amqplib');
     const url = process.env.BROKER_URL || 'amqp://localhost';
 
     connection = await amqplib.connect(url);
     channel = await connection.createChannel();
-    await channel.assertExchange(EXCHANGE_GENERAL, 'topic', { durable: true });
-    await channel.assertExchange(EXCHANGE_AUTH, 'topic', { durable: true });
+    await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
 
     return channel;
 }
 
+async function asegurarExchange(exchange) {
+    const ch = await conectar();
+    await ch.assertExchange(exchange, 'topic', { durable: true });
+    return ch;
+}
+
 async function publish(topic, payload) {
     const ch = await conectar();
-    const exchange = resolverExchange(topic);
+    ch.publish(EXCHANGE, topic, Buffer.from(JSON.stringify(payload)), {
+        contentType: 'application/json',
+        persistent: true
+    });
+    return { publicado: true, topic };
+}
+
+async function publishToExchange(exchange, topic, payload) {
+    const ch = await asegurarExchange(exchange);
     ch.publish(exchange, topic, Buffer.from(JSON.stringify(payload)), {
         contentType: 'application/json',
         persistent: true
     });
-    return { publicado: true, topic, exchange };
+    return { publicado: true, exchange, topic };
 }
 
 async function subscribe(topic, handler) {
     const ch = await conectar();
-    const exchange = resolverExchange(topic);
+    const { queue } = await ch.assertQueue(`notificaciones.${topic}`, { durable: true });
+    await ch.bindQueue(queue, EXCHANGE, topic);
+
+    ch.consume(queue, async (msg) => {
+        if (!msg) return;
+        try {
+            const payload = JSON.parse(msg.content.toString());
+            await handler(payload);
+            ch.ack(msg);
+        } catch (error) {
+            console.error(`[rabbitmqBroker] error procesando "${topic}":`, error.message);
+            ch.nack(msg, false, false);
+        }
+    });
+}
+
+async function subscribeToExchange(exchange, topic, handler) {
+    const ch = await asegurarExchange(exchange);
     const { queue } = await ch.assertQueue(`notificaciones.${topic}`, { durable: true });
     await ch.bindQueue(queue, exchange, topic);
 
@@ -64,4 +87,4 @@ async function cerrar() {
     connection = undefined;
 }
 
-module.exports = { publish, subscribe, cerrar };
+module.exports = { publish, subscribe, publishToExchange, subscribeToExchange, cerrar };

@@ -2,62 +2,92 @@ const notificacionService = require('../services/notificacionService');
 const emailService = require('../services/emailService');
 const broker = require('../broker');
 
-//Procesa los eventos publicados por Auth
+// AUTH publica el evento en el routing key correspondiente. El payload no necesita
+// traer un campo "tipo" porque el propio routing key ya identifica la operación.
 async function manejarRecuperacionCuenta(evento) {
-    return procesarEventoAuth(evento, 'recuperacion_cuenta', 'Restablecer contraseña');
+    return procesarEventoAuth(evento, {
+        routingKey: 'recuperacion_cuenta',
+        tipoNotificacion: 'RECUPERACION_PASSWORD',
+        asunto: 'Restablecer contraseña',
+        mensaje: 'Solicitud para restablecer la contraseña'
+    });
 }
 
-
-//Procesa el evento de creación de cuenta Staff
-async function manejarCuentaStaff(evento) {
-    return procesarEventoAuth(evento, 'cuenta_staff', 'Cuenta creada de Staff');
+async function manejarCrearCuenta(evento) {
+    return procesarEventoAuth(evento, {
+        routingKey: 'cuenta_staff',
+        tipoNotificacion: 'CREACION_STAFF',
+        asunto: 'Cuenta creada de Staff',
+        mensaje: 'Se ha creado una cuenta de staff'
+    });
 }
 
-async function procesarEventoAuth(evento, tipoEsperado, tituloNotificacion) {
-    validar(evento, tipoEsperado);
+async function procesarEventoAuth(evento, config) {
+    validar(evento, config.routingKey);
 
-    const { id_usuario: usuarioId, email_destino: emailDestino, url, rol } = evento;
+    const usuarioIdRecibido = evento.Id_usuario ?? evento.id_usuario ?? evento.usuarioId;
+    const emailDestino = String(evento.email_destino || '').trim();
+    const url = String(evento.url || '').trim();
+    // El contrato de cuenta_staff no trae id_usuario; se usa el correo como identificador
+    // provisional para cumplir id_usuario NOT NULL sin alterar el contrato de AUTH.
+    const usuarioId = String(usuarioIdRecibido ?? emailDestino).trim();
 
     const notificacion = await notificacionService.crearNotificacion({
-        usuarioId: String(usuarioId),
-        tipo: 'RECUPERACION_PASSWORD',
-        titulo: tituloNotificacion,
-        mensaje: `${tituloNotificacion}: ${url}`,
-        // Conserva el rol cuando el evento lo incluye.
-        datos: rol !== undefined ? { url, rol } : { url }
+        usuarioId,
+        tipo: config.tipoNotificacion,
+        canal: 'EMAIL',
+        mensaje: `${config.mensaje}. Enlace: ${url}`,
+        datos: { email_destino: emailDestino, url, origen: 'AUTH' }
     });
 
+    let resultado;
     try {
         await notificacionService.enviarConReintentos(
             notificacion.id_notificacion,
-            () => emailService.enviarCorreo(emailDestino, tituloNotificacion, url)
+            'EMAIL',
+            () => emailService.enviarCorreo(emailDestino, config.asunto, `${config.mensaje}:\n${url}`),
+            3
         );
-
-        await broker.publish('notificaciones.auth.resultado', {
+        resultado = {
             email_destino: emailDestino,
             estado_envio: 'exitoso'
-        });
+        };
     } catch (error) {
-        await broker.publish('notificaciones.auth.resultado', {
+        resultado = {
             email_destino: emailDestino,
+            gmail_destino: emailDestino, // alias para consumidores que esperan el nombre del ejemplo anterior
             estado_envio: 'error',
             error_envio: error.message
-        });
+        };
     }
 
-    return notificacion;
+    // Se informa a AUTH tanto si el envío se realizó como si agotó los reintentos.
+    await broker.publish('notificaciones.auth.resultado', resultado);
+    return { ...resultado, id_notificacion: notificacion.id_notificacion, tipo_notificacion: config.tipoNotificacion };
 }
 
-function validar(evento, tipoEsperado) {
-    if (!evento || evento.tipo !== tipoEsperado) {
-        throw new Error(`Evento inválido: se esperaba tipo "${tipoEsperado}"`);
+function validar(evento, routingKey) {
+    if (!evento || typeof evento !== 'object' || Array.isArray(evento)) {
+        throw new Error(`Evento "${routingKey}" inválido: se esperaba un objeto JSON`);
     }
-    const requeridos = ['id_usuario', 'email_destino', 'url'];
-    for (const campo of requeridos) {
-        if (evento[campo] === undefined || evento[campo] === null) {
-            throw new Error(`Evento "${tipoEsperado}" inválido: falta el campo "${campo}"`);
-        }
+    if (evento.tipo && evento.tipo !== routingKey) {
+        throw new Error(`Evento inválido: se esperaba tipo "${routingKey}"`);
+    }
+    if (!evento.email_destino || !String(evento.email_destino).trim()) {
+        throw new Error(`Evento "${routingKey}" inválido: falta el campo "email_destino"`);
+    }
+    if (!evento.url || !String(evento.url).trim()) {
+        throw new Error(`Evento "${routingKey}" inválido: falta el campo "url"`);
+    }
+    if (routingKey === 'recuperacion_cuenta' && evento.Id_usuario == null && evento.id_usuario == null && evento.usuarioId == null) {
+        throw new Error('Evento "recuperacion_cuenta" inválido: falta el campo "Id_usuario"');
+    }
+    try {
+        const parsed = new URL(String(evento.url));
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('protocolo inválido');
+    } catch {
+        throw new Error(`Evento "${routingKey}" inválido: url debe ser una URL http o https`);
     }
 }
 
-module.exports = { manejarRecuperacionCuenta, manejarCuentaStaff };
+module.exports = { manejarRecuperacionCuenta, manejarCrearCuenta, procesarEventoAuth };
