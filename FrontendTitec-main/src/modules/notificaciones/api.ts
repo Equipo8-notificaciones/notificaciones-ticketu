@@ -18,15 +18,28 @@ export type Notificacion = {
   datos: Record<string, unknown>;
 };
 
-export async function obtener_notificaciones(
-  usuarioId: string,
-  signal?: AbortSignal
-): Promise<Notificacion[]> {
-  const query = new URLSearchParams({ usuarioId });
-  const res = await fetch(`${GATEWAY_URL}${BASE_PATH}?${query}`, { signal });
-  if (!res.ok) {
-    throw new Error("Error al obtener las notificaciones del usuario");
+function verificar_respuesta(res: Response, mensaje_error: string): void {
+  if (res.status === 401) {
+    window.location.assign("/login");
+    throw new Error("La sesión expiró. Inicia sesión nuevamente.");
   }
+  if (res.status === 403) {
+    throw new Error("No tienes permiso para acceder a estas notificaciones.");
+  }
+  if (res.status === 503) {
+    throw new Error("El servicio de notificaciones no está disponible temporalmente.");
+  }
+  if (!res.ok) {
+    throw new Error(mensaje_error);
+  }
+}
+
+export async function obtener_notificaciones(signal?: AbortSignal): Promise<Notificacion[]> {
+  const res = await fetch(`${GATEWAY_URL}${BASE_PATH}`, {
+    signal,
+    credentials: "include",
+  });
+  verificar_respuesta(res, "Error al obtener las notificaciones del usuario");
   const notificaciones = (await res.json()) as Notificacion[];
   return notificaciones.map((notificacion) => ({
     ...notificacion,
@@ -42,11 +55,10 @@ async function solicitar_actualizacion(
   const res = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  if (!res.ok) {
-    throw new Error("No se pudo actualizar la notificación");
-  }
+  verificar_respuesta(res, "No se pudo actualizar la notificación");
 }
 
 export async function marcar_notificacion_leida(
@@ -58,11 +70,10 @@ export async function marcar_notificacion_leida(
   );
 }
 
-export async function marcar_todas_leidas(usuarioId: string): Promise<void> {
+export async function marcar_todas_leidas(): Promise<void> {
   await solicitar_actualizacion(
     `${GATEWAY_URL}${BASE_PATH}/marcar-todas-leidas`,
-    "POST",
-    { usuarioId }
+    "POST"
   );
 }
 

@@ -10,8 +10,6 @@ import {
 } from "../api";
 import NotificationPanel from "./NotificationPanel";
 
-const usuarioId = process.env.NEXT_PUBLIC_NOTIFICACIONES_USUARIO_ID ?? "usuario-demo";
-
 export default function NotificacionesPlaceholder() {
   const [abierto] = useState(true);
   const [notificaciones, establecer_notificaciones] = useState<Notificacion[]>([]);
@@ -30,7 +28,7 @@ export default function NotificacionesPlaceholder() {
   useEffect(() => {
     const controlador = new AbortController();
 
-    obtener_notificaciones(usuarioId, controlador.signal)
+    obtener_notificaciones(controlador.signal)
       .then((resultado) => {
         const visibles = resultado.filter((notificacion) => notificacion.estado !== "eliminada");
         establecer_notificaciones(visibles);
@@ -73,7 +71,7 @@ export default function NotificacionesPlaceholder() {
 
   async function al_marcar_todas_leidas() {
     try {
-      await marcar_todas_leidas(usuarioId);
+      await marcar_todas_leidas();
       const actualizadas = notificaciones.map((notificacion) => ({
         ...notificacion,
         estado: "leida" as const,
