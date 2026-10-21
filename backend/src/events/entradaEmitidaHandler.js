@@ -16,7 +16,6 @@ async function manejarEntradaEmitida(evento) {
         fecha_evento: fechaEvento,
         hora_evento: horaEvento,
         qr_data: qrData,
-        cantidad_entradas: cantidadEntradas = 1,
         ubicacion_evento: ubicacionEvento
     } = evento;
 
@@ -41,7 +40,7 @@ async function manejarEntradaEmitida(evento) {
     }
 
     const datos = { ...evento };
-    const mensajeCompra = `Tu compra para ${nombreEvento} fue procesada. Fecha: ${fechaEvento}, hora: ${horaEvento}. Cantidad de entradas: ${cantidadEntradas}.`;
+    const mensajeCompra = `Tu compra para ${nombreEvento} fue procesada. Fecha: ${fechaEvento}, hora: ${horaEvento}.`;
     const notiApp = await notificacionService.crearNotificacion({
         usuarioId: String(idUsuario), tipo: 'COMPRA', mensaje: mensajeCompra, canal: 'APP', datos
     });
@@ -55,7 +54,6 @@ async function manejarEntradaEmitida(evento) {
         `Tu compra para el evento ${nombreEvento} fue registrada.`,
         `Fecha: ${fechaEvento}`,
         `Hora: ${horaEvento}`,
-        `Cantidad de entradas: ${cantidadEntradas}`,
         `Código QR: ${qrData}`
     ].join('\n');
 
@@ -117,8 +115,7 @@ async function manejarEntradaEmitida(evento) {
 async function publicarConfirmacion(estado, mensaje) {
     const payload = { estado, mensaje };
     if (broker.publishToExchange) {
-        return broker.publishToExchange('notificaciones.confirmacion_envio', 'notificaciones.confirmacion_envio', payload);
-    }
+        return broker.publishToExchange('notificaciones.confirmacion_envio', 'notificaciones.confirmacion_envio', payload);    }
     return broker.publish('notificaciones.confirmacion_envio', payload);
 }
 

@@ -16,7 +16,10 @@ const panelRoutes = require('./src/routes/panelRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_ORIGIN || false,
+    credentials: true
+}));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (req, res) => {

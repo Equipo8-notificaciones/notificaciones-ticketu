@@ -35,38 +35,54 @@ class NotificacionService {
         return notificacion;
     }
 
+    async obtenerNotificacionDeUsuario(id, usuarioId) {
+        const notificacion = await repo.findByIdAndUsuario(id, usuarioId);
+        if (!notificacion) throw new Error('Notificación no encontrada');
+        return notificacion;
+    }
+
     async obtenerEnvios(id) {
         await this.obtenerPorId(id);
         return repo.findEnviosByNotificacion(id);
     }
 
-    async marcarComoLeida(id) {
-        const notificacion = await this.obtenerPorId(id);
+    async obtenerEnviosDeUsuario(id, usuarioId) {
+        await this.obtenerNotificacionDeUsuario(id, usuarioId);
+        return repo.findEnviosByNotificacion(id);
+    }
+
+    async marcarComoLeida(id, usuarioId) {
+        const notificacion = usuarioId
+            ? await this.obtenerNotificacionDeUsuario(id, usuarioId)
+            : await this.obtenerPorId(id);
         notificacion.estado_lectura = 'LEIDA';
         notificacion.estado = 'LEIDA';
-        return repo.update(notificacion);
+        return usuarioId
+            ? repo.updateForUsuario(notificacion, usuarioId)
+            : repo.update(notificacion);
     }
 
     async marcarTodasComoLeidas(usuarioId) {
         const notificaciones = await this.obtenerCentro(usuarioId);
         const actualizadas = [];
         for (const n of notificaciones) {
-            if (n.estado_lectura === 'NO_LEIDA') actualizadas.push(await this.marcarComoLeida(n.id_notificacion));
+            if (n.estado_lectura === 'NO_LEIDA') {
+                actualizadas.push(await this.marcarComoLeida(n.id_notificacion, usuarioId));
+            }
         }
         return actualizadas;
     }
 
-    async eliminar(id) {
-        return repo.softDelete(id);
+    async eliminar(id, usuarioId) {
+        if (!usuarioId) throw new Error('usuarioId autenticado es obligatorio');
+        return repo.softDelete(id, usuarioId);
     }
 
-/*    async eliminarVarias(ids) {
+    async eliminarVarias(ids, usuarioId) {
         if (!Array.isArray(ids) || !ids.length) throw new Error('Debe indicar al menos un ID');
-        const resultados = [];
-        for (const id of ids) resultados.push(await this.eliminar(id));
-        return resultados;
+        if (!usuarioId) throw new Error('usuarioId autenticado es obligatorio');
+        return repo.softDeleteMany(ids, usuarioId);
     }
-*/
 
     // Cada intento se persiste como PENDIENTE y luego se cierra como ENVIADO o ERROR.
     // De este modo queda un registro independiente por cada reintento.

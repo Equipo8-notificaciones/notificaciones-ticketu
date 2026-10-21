@@ -47,6 +47,22 @@ class NotificacionRepository {
         return rows[0] ? this.mapRow(rows[0]) : undefined;
     }
 
+    async findByIdAndUsuario(id, usuarioId) {
+        const pool = getPool();
+        if (!pool) {
+            const row = memoriaNotificaciones.find(n =>
+                String(n.id_notificacion) === String(id) &&
+                String(n.id_usuario ?? n.usuario_id) === String(usuarioId)
+            );
+            return row ? this.mapRow(row) : undefined;
+        }
+        const { rows } = await pool.query(
+            'SELECT * FROM public.notificacion WHERE id_notificacion = $1 AND id_usuario = $2',
+            [id, usuarioId]
+        );
+        return rows[0] ? this.mapRow(rows[0]) : undefined;
+    }
+
     async findByUsuario(usuarioId) {
         const pool = getPool();
         if (!pool) {
@@ -97,20 +113,87 @@ class NotificacionRepository {
         return this.mapRow(rows[0]);
     }
 
-    async softDelete(id) {
+    async updateForUsuario(n, usuarioId) {
         const pool = getPool();
+        if (!pool) {
+            const index = memoriaNotificaciones.findIndex(x =>
+                String(x.id_notificacion) === String(n.id_notificacion) &&
+                String(x.id_usuario ?? x.usuario_id) === String(usuarioId)
+            );
+            if (index < 0) throw new Error('Notificación no encontrada');
+            memoriaNotificaciones[index] = { ...memoriaNotificaciones[index], ...n };
+            return this.mapRow(memoriaNotificaciones[index]);
+        }
+        const { rows } = await pool.query(
+            `UPDATE public.notificacion
+             SET estado_lectura = $3, fecha_eliminacion = $4
+             WHERE id_notificacion = $1 AND id_usuario = $2
+             RETURNING *`,
+            [n.id_notificacion, usuarioId, n.estado_lectura, n.fecha_eliminacion || null]
+        );
+        if (!rows[0]) throw new Error('Notificación no encontrada');
+        return this.mapRow(rows[0]);
+    }
+
+    async softDelete(id, usuarioId) {
+        const pool = getPool();
+        if (!pool) {
+            const index = memoriaNotificaciones.findIndex(x =>
+                String(x.id_notificacion) === String(id) &&
+                String(x.id_usuario ?? x.usuario_id) === String(usuarioId)
+            );
+            if (index < 0) throw new Error('Notificación no encontrada');
+            memoriaNotificaciones[index] = {
+                ...memoriaNotificaciones[index],
+                estado_lectura: 'ELIMINADA',
+                estado: 'ELIMINADA',
+                fecha_eliminacion: memoriaNotificaciones[index].fecha_eliminacion || new Date().toISOString()
+            };
+            return this.mapRow(memoriaNotificaciones[index]);
+        }
         const { rows } = await pool.query(
             `UPDATE public.notificacion
             SET estado_lectura = 'ELIMINADA',
                 fecha_eliminacion = COALESCE(fecha_eliminacion, NOW())
-            WHERE id_notificacion = $1
+            WHERE id_notificacion = $1 AND id_usuario = $2
             RETURNING *`,
-            [id]
+            [id, usuarioId]
         );
 
         if (!rows[0]) throw new Error('Notificación no encontrada');
 
         return this.mapRow(rows[0]);
+    }
+
+    async softDeleteMany(ids, usuarioId) {
+        const pool = getPool();
+        if (!pool) {
+            const eliminadas = [];
+            for (const id of ids) {
+                const index = memoriaNotificaciones.findIndex(x =>
+                    String(x.id_notificacion) === String(id) &&
+                    String(x.id_usuario ?? x.usuario_id) === String(usuarioId)
+                );
+                if (index < 0) continue;
+                memoriaNotificaciones[index] = {
+                    ...memoriaNotificaciones[index],
+                    estado_lectura: 'ELIMINADA',
+                    estado: 'ELIMINADA',
+                    fecha_eliminacion: memoriaNotificaciones[index].fecha_eliminacion || new Date().toISOString()
+                };
+                eliminadas.push(this.mapRow(memoriaNotificaciones[index]));
+            }
+            return eliminadas;
+        }
+        const { rows } = await pool.query(
+            `UPDATE public.notificacion
+             SET estado_lectura = 'ELIMINADA',
+                 fecha_eliminacion = COALESCE(fecha_eliminacion, NOW())
+             WHERE id_usuario = $1 AND id_notificacion = ANY($2)
+             RETURNING *`,
+            [usuarioId, ids]
+        );
+        return rows.map(row => this.mapRow(row));
     }
 
     async crearIntentoEnvio(idNotificacion, intento) {

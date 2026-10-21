@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const notificacionService = require('../services/notificacionService');
-const { manejarEntradaEmitida } = require('../events/entradaEmitidaHandler');
+const authMiddleware = require('../middleware/authMiddleware');
+
+router.use(authMiddleware);
 
 /**
  * @swagger
  * /api/notificaciones:
  *   post:
  *     summary: Crear una notificación
- *     description: Crea una nueva notificación para un usuario. Usado internamente por el módulo o por los manejadores de eventos.
+ *     description: Crea una notificación para el usuario autenticado; se ignora cualquier ID de usuario del body.
  *     tags: [Notificaciones]
  *     requestBody:
  *       required: true
@@ -32,19 +34,13 @@ const { manejarEntradaEmitida } = require('../events/entradaEmitidaHandler');
  */
 router.post('/', async (req, res) => {
     try {
-        const notificacion = await notificacionService.crearNotificacion(req.body);
+        const notificacion = await notificacionService.crearNotificacion({
+            ...req.body,
+            usuarioId: req.user.id_usuario
+        });
         res.status(201).json(notificacion);
     } catch (error) {
         res.status(400).json({ error: 'Error al crear notificación', detalle: error.message });
-    }
-});
-
-router.post('/probar-entradas', async (req, res) => {
-    try {
-        const resultado = await manejarEntradaEmitida({ ...req.body, tipo: 'entradas_emitidas' });
-        res.status(201).json(resultado);
-    } catch (error) {
-        res.status(400).json({ error: 'Error al procesar datos de Entradas', detalle: error.message });
     }
 });
 
@@ -55,13 +51,6 @@ router.post('/probar-entradas', async (req, res) => {
  *     summary: Obtener el centro de notificaciones de un usuario
  *     description: Lista las notificaciones no eliminadas de un usuario, ordenadas de la más reciente a la más antigua.
  *     tags: [Notificaciones]
- *     parameters:
- *       - in: query
- *         name: usuarioId
- *         required: true
- *         schema:
- *           type: string
- *         description: Identificador del usuario dueño de las notificaciones.
  *     responses:
  *       200:
  *         description: Lista de notificaciones del usuario.
@@ -71,18 +60,10 @@ router.post('/probar-entradas', async (req, res) => {
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Notificacion'
- *       400:
- *         description: Falta el parámetro usuarioId.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorRespuesta'
  */
-router.get('/prueba/todas', async (req, res) => { try { res.json(await require('../repositories/notificacionRepository').findAll()); } catch (error) { res.status(500).json({ error: 'Error en mostrar notificaciones', detalle: error.message }); } });
-
 router.get('/', async (req, res) => {
     try {
-        const notificaciones = await notificacionService.obtenerCentro(req.query.usuarioId);
+        const notificaciones = await notificacionService.obtenerCentro(req.user.id_usuario);
         res.json(notificaciones);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -135,7 +116,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id/envios', async (req, res) => {
     try {
-        res.json(await notificacionService.obtenerEnvios(req.params.id));
+        res.json(await notificacionService.obtenerEnviosDeUsuario(req.params.id, req.user.id_usuario));
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -143,7 +124,7 @@ router.get('/:id/envios', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        res.json(await notificacionService.obtenerPorId(req.params.id));
+        res.json(await notificacionService.obtenerNotificacionDeUsuario(req.params.id, req.user.id_usuario));
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -178,7 +159,7 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/:id/leida', async (req, res) => {
     try {
-        res.json(await notificacionService.marcarComoLeida(req.params.id));
+        res.json(await notificacionService.marcarComoLeida(req.params.id, req.user.id_usuario));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -189,23 +170,7 @@ router.post('/:id/leida', async (req, res) => {
  * /api/notificaciones/marcar-todas-leidas:
  *   post:
  *     summary: Marcar todas las notificaciones de un usuario como leídas
- *     description: usuarioId puede enviarse en el body o como query param.
  *     tags: [Notificaciones]
- *     parameters:
- *       - in: query
- *         name: usuarioId
- *         required: false
- *         schema:
- *           type: string
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               usuarioId:
- *                 type: string
  *     responses:
  *       200:
  *         description: Notificaciones que fueron actualizadas a estado LEIDA.
@@ -215,16 +180,10 @@ router.post('/:id/leida', async (req, res) => {
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Notificacion'
- *       400:
- *         description: Falta usuarioId.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorRespuesta'
  */
 router.post('/marcar-todas-leidas', async (req, res) => {
     try {
-        res.json(await notificacionService.marcarTodasComoLeidas(req.body.usuarioId || req.query.usuarioId));
+        res.json(await notificacionService.marcarTodasComoLeidas(req.user.id_usuario));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -260,7 +219,7 @@ router.post('/marcar-todas-leidas', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
     try {
-        res.json(await notificacionService.eliminar(req.params.id));
+        res.json(await notificacionService.eliminar(req.params.id, req.user.id_usuario));
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -303,7 +262,7 @@ router.delete('/:id', async (req, res) => {
  */
 router.delete('/', async (req, res) => {
     try {
-        res.json(await notificacionService.eliminarVarias(req.body.ids));
+        res.json(await notificacionService.eliminarVarias(req.body.ids, req.user.id_usuario));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
