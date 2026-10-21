@@ -117,7 +117,7 @@ async function manejarEntradaEmitida(evento) {
 async function publicarConfirmacion(estado, mensaje) {
     const payload = { estado, mensaje };
     if (broker.publishToExchange) {
-        return broker.publishToExchange('notificaciones.events', 'notificaciones.confirmacion_envio', payload);
+        return broker.publishToExchange('notificaciones.confirmacion_envio', 'notificaciones.confirmacion_envio', payload);
     }
     return broker.publish('notificaciones.confirmacion_envio', payload);
 }

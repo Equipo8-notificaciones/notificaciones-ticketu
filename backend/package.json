@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "test": "node --test",
-    "check": "node --check app.js"
+    "check": "node --check app.js",
+    "test:compra": "node tests/test_compra_entrada_rabbitmq.js"
   },
   "keywords": [
     "notificaciones",
