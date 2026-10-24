@@ -1,6 +1,10 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { planificarRecordatorio, formatearFechaEvento } = require('../../src/jobs/notificacionJobs');
+const {
+    planificarRecordatorio,
+    formatearFechaEvento,
+    programarTrabajoRecordatorio
+} = require('../../src/jobs/notificacionJobs');
 
 const horasEnMilisegundos = 60 * 60 * 1000;
 
@@ -30,4 +34,25 @@ test('también envía inmediatamente justo cuando llega la hora programada', () 
 test('formatea la fecha del evento como día-mes-año', () => {
     assert.equal(formatearFechaEvento('2026-10-01'), '01-10-2026');
     assert.equal(formatearFechaEvento('01-10-2026'), '01-10-2026');
+});
+
+test('reemplaza el recordatorio anterior al reprogramar el mismo usuario y evento', () => {
+    const setTimeoutOriginal = global.setTimeout;
+    const clearTimeoutOriginal = global.clearTimeout;
+    const timersCancelados = [];
+    let siguienteTimer = 0;
+    global.setTimeout = () => ({ id: ++siguienteTimer, unref() {} });
+    global.clearTimeout = timer => timersCancelados.push(timer);
+
+    try {
+        const fechaEnvio = new Date(Date.now() + horasEnMilisegundos);
+        programarTrabajoRecordatorio('usuario:evento', fechaEnvio, () => {});
+        programarTrabajoRecordatorio('usuario:evento', new Date(Date.now() + 2 * horasEnMilisegundos), () => {});
+        programarTrabajoRecordatorio('usuario:evento', new Date(Date.now() - 1), () => {});
+
+        assert.deepEqual(timersCancelados.map(timer => timer.id), [1, 2]);
+    } finally {
+        global.setTimeout = setTimeoutOriginal;
+        global.clearTimeout = clearTimeoutOriginal;
+    }
 });

@@ -1,8 +1,7 @@
 const notificacionService = require('../services/notificacionService');
 const canalEnvioService = require('../services/canalEnvioService');
 const entradasService = require('../services/entradasService');
-
-const ESTADOS_EVENTO = new Set(['borrador', 'cancelado', 'finalizado', 'publicado']);
+const recordatorioEventoService = require('../services/recordatorioEventoService');
 
 async function manejarEventoActualizado(evento) {
     return procesarEventoPanel(evento, false);
@@ -14,7 +13,49 @@ async function manejarEventoReprogramado(evento) {
 
 async function procesarEventoPanel(evento, reprogramado) {
     const { idEvento, idUsuario, estado } = validarEvento(evento, reprogramado);
-    const usuarios = await entradasService.obtenerUsuariosConEntradasActivas(idEvento);
+    const { fecha_evento: fechaEventoDb, es_futuro: eventoFuturo } =
+        await entradasService.obtenerFechaEvento(idEvento);
+    const fechaEvento = new Date(fechaEventoDb);
+    if (Number.isNaN(fechaEvento.getTime())) {
+        throw new Error(`La fecha_evento almacenada para el evento ${idEvento} no es válida.`);
+    }
+    if (eventoFuturo !== true) {
+        throw new Error(`El evento ${idEvento} ya inició o finalizó; no se procesan cambios de Panel.`);
+    }
+
+    let usuarios;
+    if (reprogramado) {
+        const entradasActualizadas = await entradasService.actualizarFechaEvento(
+            idEvento,
+            evento.fecha_cambio,
+            evento.hora_cambio
+        );
+        usuarios = [...new Map(
+            entradasActualizadas
+                .filter(entrada => entrada.entrada_activa && entrada.id_usuario !== null && entrada.id_usuario !== undefined)
+                .map(entrada => [String(entrada.id_usuario), entrada])
+        ).values()];
+
+        for (const usuario of usuarios) {
+            const datosRecordatorio = {
+                id_usuario: String(usuario.id_usuario),
+                id_evento: idEvento,
+                nombre_evento: usuario.nombre_evento,
+                fecha_evento: evento.fecha_cambio,
+                hora_evento: evento.hora_cambio
+            };
+            await recordatorioEventoService.programarRecordatorioEvento(datosRecordatorio).catch(error => {
+                console.error(
+                    `[panelEventoHandler] No se pudo reprogramar el recordatorio de ${usuario.id_usuario}:`,
+                    error.message
+                );
+            });
+        }
+    } else {
+        await entradasService.marcarEventoCancelado(idEvento);
+        usuarios = await entradasService.obtenerUsuariosConEntradasActivas(idEvento);
+    }
+
     const destinatarios = new Map();
     for (const usuario of usuarios) {
         if (usuario.id_usuario !== null && usuario.id_usuario !== undefined) {
@@ -33,9 +74,10 @@ async function procesarEventoPanel(evento, reprogramado) {
                 datos: {
                     id_evento: idEvento,
                     nuevo_estado: estado,
+                    nombre_evento: destinatarios.get(idDestinatario)?.nombre_evento,
                     ...(reprogramado && {
-                        fecha_cambio: evento.fecha_cambio,
-                        hora_cambio: evento.hora_cambio
+                        fecha_evento: evento.fecha_cambio,
+                        hora_evento: evento.hora_cambio
                     })
                 }
             });
@@ -75,11 +117,12 @@ function validarEvento(evento, reprogramado) {
 
     if (!idEvento) throw new Error('Debe indicar id_evento.');
     if (!idUsuario) throw new Error('Debe indicar id_usuario para enviar la confirmación.');
-    if (!ESTADOS_EVENTO.has(estado)) {
-        throw new Error('nuevo_estado debe ser borrador, cancelado, finalizado o publicado.');
+    const estadoEsperado = reprogramado ? 'publicado' : 'cancelado';
+    if (estado !== estadoEsperado) {
+        throw new Error(`nuevo_estado para ${reprogramado ? 'evento_reprogramado' : 'evento_actualizado'} debe ser ${estadoEsperado}.`);
     }
     if (reprogramado && (!esFechaValida(evento.fecha_cambio) || !esHoraValida(evento.hora_cambio))) {
-        throw new Error('evento_reprogramdo debe incluir fecha_cambio (AAAA-MM-DD) y hora_cambio (HH:mm[:ss]) válidas.');
+        throw new Error('evento_reprogramado debe incluir fecha_cambio (AAAA-MM-DD) y hora_cambio (HH:mm[:ss]) válidas.');
     }
 
     return { idEvento, idUsuario, estado };

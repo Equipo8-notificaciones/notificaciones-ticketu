@@ -19,7 +19,7 @@ test('deduplica los routing keys suscritos de Entradas, AUTH y Panel', async () 
                 ['auth.events', 'recuperacion_cuenta'],
                 ['auth.events', 'creacion_cuenta'],
                 ['panel.evento.notificaciones.v1', 'evento_actualizado'],
-                ['panel.evento.notificaciones.v1', 'evento_reprogramdo']
+                ['panel.evento.notificaciones.v1', 'evento_reprogramado']
             ]
         );
         for (const suscripcion of suscripciones) {

@@ -1,5 +1,6 @@
 const DIA_EN_MILISEGUNDOS = 24 * 60 * 60 * 1000;
 const MAX_DELAY = 2_147_000_000;
+const recordatoriosProgramados = new Map();
 
 function parsearFechaEvento(fechaEvento, horaEvento) {
     const fechaMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fechaEvento));
@@ -56,20 +57,26 @@ function crearTrabajoRecordatorio(datos) {
     return { tipo: 'RECORDATORIO_24H', datos };
 }
 
-function programarTrabajoRecordatorio(fechaEnvio, ejecutar) {
+function programarTrabajoRecordatorio(clave, fechaEnvio, ejecutar) {
+    const trabajoAnterior = recordatoriosProgramados.get(clave);
+    if (trabajoAnterior) clearTimeout(trabajoAnterior.timer);
+
     const ejecutarCuandoCorresponda = () => {
         const delay = fechaEnvio.getTime() - Date.now();
         if (delay > 0) {
             const timer = setTimeout(ejecutarCuandoCorresponda, Math.min(delay, MAX_DELAY));
             timer.unref?.();
+            recordatoriosProgramados.set(clave, { timer });
             return;
         }
 
+        recordatoriosProgramados.delete(clave);
         Promise.resolve()
             .then(ejecutar)
             .catch((error) => console.error('[notificacionJobs] falló recordatorio programado:', error.message));
     };
 
+    recordatoriosProgramados.set(clave, { timer: null });
     ejecutarCuandoCorresponda();
     return { tipo: 'RECORDATORIO_24H', fecha_ejecucion: fechaEnvio.toISOString() };
 }

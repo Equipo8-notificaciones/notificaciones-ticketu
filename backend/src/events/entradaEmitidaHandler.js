@@ -2,7 +2,8 @@ const notificacionService = require('../services/notificacionService');
 const canalEnvioService = require('../services/canalEnvioService');
 const emailService = require('../services/emailService');
 const broker = require('../broker');
-const { planificarRecordatorio, programarTrabajoRecordatorio } = require('../jobs/notificacionJobs');
+const { planificarRecordatorio } = require('../jobs/notificacionJobs');
+const { programarRecordatorioEvento } = require('../services/recordatorioEventoService');
 
 const EXCHANGE_CONFIRMACION = 'notificaciones.event';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
@@ -84,23 +85,23 @@ async function manejarEntradaEmitida(evento) {
 
     // Recordatorio APP: si faltan menos de 24 horas, se registra inmediatamente; si no,
     // se programa en memoria para la fecha correspondiente (no sobrevive reinicios del proceso).
-    const crearRecordatorio = async () => {
-        const recordatorio = await notificacionService.crearNotificacion({
-            usuarioId: String(idUsuario),
-            tipo: 'RECORDATORIO_24H',
-            mensaje: `Recuerda ${nombreEvento} el ${fechaEvento} a las ${horaEvento}${ubicacionEvento ? ` en ${ubicacionEvento}` : ''}.`,
-            canal: 'APP',
-            datos
-        });
-        await notificacionService.enviarConReintentos(
-            recordatorio.id_notificacion, 'APP', n => canalEnvioService.enviarNotificacion(n), 3
-        );
+    const datosRecordatorio = {
+        ...datos,
+        id_usuario: String(idUsuario),
+        id_evento: String(idEvento),
+        nombre_evento: nombreEvento,
+        fecha_evento: fechaEvento,
+        hora_evento: horaEvento,
+        ubicacion_evento: ubicacionEvento
     };
     if (plan.enviarAhora && plan.fechaEvento.getTime() > Date.now()) {
-        await crearRecordatorio().catch(error => console.error('[entradaEmitidaHandler] error en recordatorio:', error.message));
+        await programarRecordatorioEvento(datosRecordatorio)
+            .catch(error => console.error('[entradaEmitidaHandler] error en recordatorio:', error.message));
     } else if (plan.fechaEnvio && plan.fechaEnvio.getTime() > Date.now()) {
-        programarTrabajoRecordatorio(plan.fechaEnvio, crearRecordatorio);
-        await publicarConfirmacion(idUsuario, idEvento, 'programado');
+        const recordatorio = await programarRecordatorioEvento(datosRecordatorio);
+        if (recordatorio.programado) {
+            await publicarConfirmacion(idUsuario, idEvento, 'programado');
+        }
     }
 
     return {

@@ -2,15 +2,21 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 const { planificarRecordatorio } = require('../../src/jobs/notificacionJobs');
+const entradasService = require('../../src/services/entradasService');
 const broker = require('../../src/broker');
 
 process.env.SMTP_HOST = '';
 const { manejarEntradaEmitida } = require('../../src/events/entradaEmitidaHandler');
 const publicarOriginal = broker.publishToExchange;
+const obtenerEstadoRecordatorioOriginal = entradasService.obtenerEstadoRecordatorio;
 let confirmaciones;
 
 test.beforeEach(() => {
     confirmaciones = [];
+    entradasService.obtenerEstadoRecordatorio = async () => ({
+        estado_evento: 'PROGRAMADO',
+        evento_futuro: true
+    });
     broker.publishToExchange = async (exchange, topic, payload) => {
         confirmaciones.push({ exchange, topic, payload });
     };
@@ -18,6 +24,7 @@ test.beforeEach(() => {
 
 test.afterEach(() => {
     broker.publishToExchange = publicarOriginal;
+    entradasService.obtenerEstadoRecordatorio = obtenerEstadoRecordatorioOriginal;
 });
 
 function crearEventoEnHoras(horas) {

@@ -82,17 +82,17 @@ const options = {
                         event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0851' },
                         id_evento: { type: 'string', example: 'evt-001' },
                         id_usuario: { type: 'string', example: 'usr-001' },
-                        nuevo_estado: { type: 'string', enum: ['borrador', 'cancelado', 'finalizado', 'publicado'] }
+                        nuevo_estado: { type: 'string', enum: ['cancelado'] }
                     }
                 },
-                EventoReprogramdoPanel: {
+                EventoReprogramadoPanel: {
                     type: 'object',
                     required: ['event_id', 'id_evento', 'id_usuario', 'nuevo_estado', 'fecha_cambio', 'hora_cambio'],
                     properties: {
                         event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0852' },
                         id_evento: { type: 'string', example: 'evt-001' },
                         id_usuario: { type: 'string', example: 'usr-001' },
-                        nuevo_estado: { type: 'string', enum: ['borrador', 'cancelado', 'finalizado', 'publicado'] },
+                        nuevo_estado: { type: 'string', enum: ['publicado'] },
                         fecha_cambio: { type: 'string', format: 'date', example: '2026-09-13' },
                         hora_cambio: { type: 'string', example: '00:00:00' }
                     }

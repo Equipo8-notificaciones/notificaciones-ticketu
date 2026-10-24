@@ -20,7 +20,7 @@ async function iniciarSuscripciones() {
         suscribirEvento(EXCHANGE_AUTH, 'recuperacion_cuenta', manejarRecuperacionCuenta),
         suscribirEvento(EXCHANGE_AUTH, 'creacion_cuenta', manejarCrearCuenta),
         suscribirEvento(EXCHANGE_PANEL, 'evento_actualizado', manejarEventoActualizado),
-        suscribirEvento(EXCHANGE_PANEL, 'evento_reprogramdo', manejarEventoReprogramado)
+        suscribirEvento(EXCHANGE_PANEL, 'evento_reprogramado', manejarEventoReprogramado)
     ]);
 }
 
