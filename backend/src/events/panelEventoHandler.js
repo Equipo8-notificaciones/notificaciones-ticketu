@@ -1,90 +1,43 @@
 const notificacionService = require('../services/notificacionService');
 const canalEnvioService = require('../services/canalEnvioService');
 const entradasService = require('../services/entradasService');
-const broker = require('../broker');
 
-async function manejarReprogramarEvento(evento) {
-    validarBase(evento);
-    const idEvento = String(evento.id_evento);
-    const fechaEntrada = evento.nueva_fecha_evento ?? evento.fecha_evento;
-    if (!fechaEntrada || Number.isNaN(new Date(fechaEntrada).getTime())) {
-        throw new Error('Debe enviar nueva_fecha_evento como fecha/hora válida (ISO 8601 recomendado).');
-    }
+const ESTADOS_EVENTO = new Set(['borrador', 'cancelado', 'finalizado', 'publicado']);
 
-    const filasActualizadas = await entradasService.reprogramarEvento(idEvento, new Date(fechaEntrada).toISOString());
-    const fechaAnterior = filasActualizadas[0]?.fecha_anterior ?? evento.fecha_anterior ?? null;
-    const fechaAnteriorISO = fechaAnterior
-        ? new Date(fechaAnterior).toISOString()
-        : null;
-    const activas = filasActualizadas.filter(fila => fila.entrada_activa);
-    const nombreEvento = evento.nombre_evento || filasActualizadas[0]?.nombre_evento || idEvento;
-    const resumen = await notificarUsuarios({
-        idEvento,
-        filas: activas,
-        tipo: 'CAMBIO_EVENTO',
-        mensaje: `El evento ${nombreEvento} fue reprogramado. Nueva fecha: ${new Date(fechaEntrada).toLocaleString('es-CL', { timeZone: 'America/Santiago' })}.`,
-        datos: {
-            id_evento: idEvento,
-            nombre_evento: nombreEvento,
-            fecha_anterior: fechaAnteriorISO,
-            nueva_fecha_evento: new Date(fechaEntrada).toISOString(),
-            estado_evento: 'REPROGRAMADO'
-        }
-    });
-    return publicarResultado(resumen);
-}
-
-async function manejarCancelarEvento(evento) {
-    validarBase(evento);
-    const idEvento = String(evento.id_evento);
-    const filasActualizadas = await entradasService.cancelarEvento(idEvento);
-    const activas = filasActualizadas.filter(fila => fila.entrada_activa);
-    const nombreEvento = evento.nombre_evento || filasActualizadas[0]?.nombre_evento || idEvento;
-    const resumen = await notificarUsuarios({
-        idEvento,
-        filas: activas,
-        tipo: 'CANCELACION_EVENTO',
-        mensaje: `El evento ${nombreEvento} fue cancelado.`,
-        datos: {
-            id_evento: idEvento,
-            nombre_evento: nombreEvento,
-            estado_evento: 'CANCELADO',
-            motivo: evento.motivo || null
-        }
-    });
-    return publicarResultado(resumen);
-}
-
-// Compatibilidad con el mensaje legado "evento_actualizado" de Panel.
 async function manejarEventoActualizado(evento) {
-    validarBase(evento);
-    const estado = String(evento.nuevo_estado || evento.estado_evento || '').toUpperCase();
-    if (estado === 'CANCELADO' || estado === 'CANCELACION_EVENTO') {
-        return manejarCancelarEvento({ ...evento, id_evento: evento.id_evento });
-    }
-    if (estado === 'REPROGRAMADO' || estado === 'CAMBIO_EVENTO') {
-        return manejarReprogramarEvento({
-            ...evento,
-            id_evento: evento.id_evento,
-            nueva_fecha_evento: evento.nueva_fecha_evento ?? evento.fecha_evento
-        });
-    }
-    throw new Error('evento_actualizado debe indicar nuevo_estado CANCELADO o REPROGRAMADO; para reprogramar incluya nueva_fecha_evento.');
+    return procesarEventoPanel(evento, false);
 }
 
-async function notificarUsuarios({ idEvento, filas, tipo, mensaje, datos }) {
-    let notificados = 0;
-    let noNotificados = 0;
+async function manejarEventoReprogramado(evento) {
+    return procesarEventoPanel(evento, true);
+}
 
-    for (const fila of filas) {
-        let notificacion;
+async function procesarEventoPanel(evento, reprogramado) {
+    const { idEvento, idUsuario, estado } = validarEvento(evento, reprogramado);
+    const usuarios = await entradasService.obtenerUsuariosConEntradasActivas(idEvento);
+    const destinatarios = new Map();
+    for (const usuario of usuarios) {
+        if (usuario.id_usuario !== null && usuario.id_usuario !== undefined) {
+            destinatarios.set(String(usuario.id_usuario), usuario);
+        }
+    }
+
+    const notificados = [];
+    for (const idDestinatario of destinatarios.keys()) {
         try {
-            notificacion = await notificacionService.crearNotificacion({
-                usuarioId: String(fila.id_usuario),
-                tipo,
+            const notificacion = await notificacionService.crearNotificacion({
+                id_usuario: idDestinatario,
+                tipo: 'EVENTO_CAMBIO',
                 canal: 'APP',
-                mensaje,
-                datos: { ...datos, correo_comprador: fila.correo_comprador }
+                mensaje: crearMensaje(evento, estado, reprogramado),
+                datos: {
+                    id_evento: idEvento,
+                    nuevo_estado: estado,
+                    ...(reprogramado && {
+                        fecha_cambio: evento.fecha_cambio,
+                        hora_cambio: evento.hora_cambio
+                    })
+                }
             });
             await notificacionService.enviarConReintentos(
                 notificacion.id_notificacion,
@@ -92,53 +45,89 @@ async function notificarUsuarios({ idEvento, filas, tipo, mensaje, datos }) {
                 n => canalEnvioService.enviarNotificacion(n),
                 3
             );
-            notificados++;
+            notificados.push(idDestinatario);
         } catch (error) {
-            noNotificados++;
-            console.error(`[panelEventoHandler] No se pudo notificar a ${fila.id_usuario}:`, error.message);
+            console.error(`[panelEventoHandler] No se pudo notificar a ${idDestinatario}:`, error.message);
         }
     }
 
-    const ahora = new Date();
-    const fechaEnvio = ahora.toLocaleString('es-CL', {
-        timeZone: 'America/Santiago',
-        day: 'numeric', month: 'long', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: false
-    });
-
-    return {
-        tipo_respuesta: 'evento_actualizado',
+    const totalUsuarios = destinatarios.size;
+    const faltantes = totalUsuarios - notificados.length;
+    const resultado = {
         id_evento: idEvento,
-        titulo: 'Evento actualizado',
-        mensaje: 'El estado del evento ha sido actualizado correctamente.',
-        estado_envio: noNotificados === 0 ? 'exitoso' : (notificados > 0 ? 'parcial' : 'error'),
-        usuarios_notificados: notificados,
-        usuarios_no_notificados: noNotificados,
-        fecha_envio: fechaEnvio,
-        fecha_envio_iso: ahora.toISOString()
+        nuevo_estado: totalUsuarios > 0 && notificados.length / totalUsuarios > 0.6 ? 'exito' : 'error',
+        usuarios_notificados: notificados.length,
+        usuarios_faltantes: faltantes,
+        fecha_envio: new Date().toISOString()
     };
+
+    await notificarOrganizador(idUsuario, resultado);
+    return resultado;
 }
 
-async function publicarResultado(resumen) {
-    // El resultado queda disponible para Panel y también para AUTH, según el contrato solicitado.
-    // Si el broker no está disponible, la respuesta HTTP sigue devolviendo el resumen ya calculado.
-    for (const topic of ['notificaciones.panel.resultado', 'notificaciones.auth.resultado']) {
-        try {
-            await broker.publish(topic, resumen);
-        } catch (error) {
-            console.error(`[panelEventoHandler] No se pudo publicar ${topic}:`, error.message);
-        }
-    }
-    return resumen;
-}
-
-function validarBase(evento) {
+function validarEvento(evento, reprogramado) {
     if (!evento || typeof evento !== 'object' || Array.isArray(evento)) {
-        throw new Error('Evento de PANEL inválido: se esperaba un objeto JSON.');
+        throw new Error('Evento de Panel inválido: se esperaba un objeto JSON.');
     }
-    if (!evento.id_evento || !String(evento.id_evento).trim()) {
-        throw new Error('Debe indicar id_evento.');
+    const idEvento = String(evento.id_evento ?? '').trim();
+    const idUsuario = String(evento.id_usuario ?? '').trim();
+    const estado = String(evento.nuevo_estado ?? '').trim().toLowerCase();
+
+    if (!idEvento) throw new Error('Debe indicar id_evento.');
+    if (!idUsuario) throw new Error('Debe indicar id_usuario para enviar la confirmación.');
+    if (!ESTADOS_EVENTO.has(estado)) {
+        throw new Error('nuevo_estado debe ser borrador, cancelado, finalizado o publicado.');
+    }
+    if (reprogramado && (!esFechaValida(evento.fecha_cambio) || !esHoraValida(evento.hora_cambio))) {
+        throw new Error('evento_reprogramdo debe incluir fecha_cambio (AAAA-MM-DD) y hora_cambio (HH:mm[:ss]) válidas.');
+    }
+
+    return { idEvento, idUsuario, estado };
+}
+
+function esFechaValida(valor) {
+    if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+    const fecha = new Date(`${valor}T00:00:00.000Z`);
+    return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor;
+}
+
+function esHoraValida(valor) {
+    if (typeof valor !== 'string') return false;
+    const partes = valor.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    return Boolean(partes &&
+        Number(partes[1]) <= 23 &&
+        Number(partes[2]) <= 59 &&
+        Number(partes[3] ?? 0) <= 59);
+}
+
+function crearMensaje(evento, estado, reprogramado) {
+    if (reprogramado) {
+        return `El evento ${evento.id_evento} fue reprogramado para el ${evento.fecha_cambio} a las ${evento.hora_cambio}.`;
+    }
+    if (estado === 'cancelado') return `El evento ${evento.id_evento} fue cancelado.`;
+    return `El estado del evento ${evento.id_evento} cambió a ${estado}.`;
+}
+
+async function notificarOrganizador(idUsuario, resultado) {
+    const mensaje = `Proceso de notificaciones del evento ${resultado.id_evento}: ${resultado.nuevo_estado}. ` +
+        `Usuarios notificados: ${resultado.usuarios_notificados}; usuarios faltantes: ${resultado.usuarios_faltantes}.`;
+    try {
+        const notificacion = await notificacionService.crearNotificacion({
+            id_usuario: idUsuario,
+            tipo: 'EVENTO_CAMBIO',
+            canal: 'APP',
+            mensaje,
+            datos: resultado
+        });
+        await notificacionService.enviarConReintentos(
+            notificacion.id_notificacion,
+            'APP',
+            n => canalEnvioService.enviarNotificacion(n),
+            3
+        );
+    } catch (error) {
+        console.error(`[panelEventoHandler] No se pudo confirmar el resultado a ${idUsuario}:`, error.message);
     }
 }
 
-module.exports = { manejarEventoActualizado, manejarReprogramarEvento, manejarCancelarEvento };
+module.exports = { manejarEventoActualizado, manejarEventoReprogramado };

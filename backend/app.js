@@ -12,7 +12,6 @@ const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./src/config/swagger');
 const notificacionRoutes = require('./src/routes/notificacionRoutes');
-const panelRoutes = require('./src/routes/panelRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -27,7 +26,6 @@ app.get('/health', (req, res) => {
 });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/notificaciones', notificacionRoutes);
-app.use('/api/panel', panelRoutes);
 app.use(errorHandler);
 
 if (require.main === module) {

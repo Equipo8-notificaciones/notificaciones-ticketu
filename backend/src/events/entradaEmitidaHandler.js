@@ -4,6 +4,9 @@ const emailService = require('../services/emailService');
 const broker = require('../broker');
 const { planificarRecordatorio, programarTrabajoRecordatorio } = require('../jobs/notificacionJobs');
 
+const EXCHANGE_CONFIRMACION = 'notificaciones.event';
+const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
+
 // Procesa la compra recibida desde Entradas/RabbitMQ.
 async function manejarEntradaEmitida(evento) {
     validar(evento);
@@ -19,6 +22,7 @@ async function manejarEntradaEmitida(evento) {
         ubicacion_evento: ubicacionEvento
     } = evento;
 
+    await publicarConfirmacion(idUsuario, idEvento, 'en_cola');
     const plan = planificarRecordatorio(fechaEvento, horaEvento);
     const pool = require('../config/database').getPool();
     const fechaPersistir = evento.fecha_evento.includes('T')
@@ -77,7 +81,6 @@ async function manejarEntradaEmitida(evento) {
     }
 
     const estado = errorApp || errorCorreo ? 'error' : 'enviado';
-    await publicarConfirmacion(estado, [errorApp?.message, errorCorreo?.message].filter(Boolean).join(' | ') || 'Notificaciones procesadas correctamente.');
 
     // Recordatorio APP: si faltan menos de 24 horas, se registra inmediatamente; si no,
     // se programa en memoria para la fecha correspondiente (no sobrevive reinicios del proceso).
@@ -97,6 +100,7 @@ async function manejarEntradaEmitida(evento) {
         await crearRecordatorio().catch(error => console.error('[entradaEmitidaHandler] error en recordatorio:', error.message));
     } else if (plan.fechaEnvio && plan.fechaEnvio.getTime() > Date.now()) {
         programarTrabajoRecordatorio(plan.fechaEnvio, crearRecordatorio);
+        await publicarConfirmacion(idUsuario, idEvento, 'programado');
     }
 
     return {
@@ -112,11 +116,16 @@ async function manejarEntradaEmitida(evento) {
     };
 }
 
-async function publicarConfirmacion(estado, mensaje) {
-    const payload = { estado, mensaje };
-    if (broker.publishToExchange) {
-        return broker.publishToExchange('notificaciones.confirmacion_envio', 'notificaciones.confirmacion_envio', payload);    }
-    return broker.publish('notificaciones.confirmacion_envio', payload);
+async function publicarConfirmacion(idUsuario, idEvento, estado) {
+    const payload = {
+        id_usuario: String(idUsuario),
+        id_evento: String(idEvento),
+        estado
+    };
+    if (typeof broker.publishToExchange !== 'function') {
+        throw new Error('El broker debe permitir publicar confirmaciones en un exchange específico.');
+    }
+    return broker.publishToExchange(EXCHANGE_CONFIRMACION, ROUTING_KEY_CONFIRMACION, payload);
 }
 
 function validar(evento) {

@@ -12,8 +12,8 @@ const options = {
         openapi: '3.0.0',
         info: {
             title: 'API de Notificaciones - TITEC',
-            version: '1.1.0',
-            description: 'API del módulo de Notificaciones integrado con Supabase, AUTH, Entradas y PANEL.'
+            version: '1.2.0',
+            description: 'API del módulo de Notificaciones integrado con Supabase, AUTH, Entradas y Panel.'
         },
         servers: [{ url: `http://localhost:${PORT}`, description: 'Servidor local' }],
         components: {
@@ -64,17 +64,37 @@ const options = {
                 },
                 PanelResultadoNotificacion: {
                     type: 'object',
-                    description: 'Resumen de cambios de evento; se publica en notificaciones.panel.resultado y notificaciones.auth.resultado.',
+                    required: ['id_evento', 'nuevo_estado', 'usuarios_notificados', 'usuarios_faltantes', 'fecha_envio'],
+                    description: 'Resultado del proceso de notificación de un evento, enviado al organizador.',
                     properties: {
-                        tipo_respuesta: { type: 'string', example: 'evento_actualizado' },
-                        id_evento: { type: 'string', example: 'ev23' },
-                        titulo: { type: 'string', example: 'Evento actualizado' },
-                        mensaje: { type: 'string', example: 'El estado del evento ha sido actualizado correctamente.' },
-                        estado_envio: { type: 'string', enum: ['exitoso', 'parcial', 'error'] },
+                        id_evento: { type: 'string', example: 'evt-001' },
+                        id_usuario: { type: 'string', example: 'usr-001' },
+                        nuevo_estado: { type: 'string', enum: ['exito', 'error'] },
                         usuarios_notificados: { type: 'integer', example: 150 },
-                        usuarios_no_notificados: { type: 'integer', example: 0 },
-                        fecha_envio: { type: 'string', example: '1 de octubre de 2026, 13:30' },
-                        fecha_envio_iso: { type: 'string', format: 'date-time' }
+                        usuarios_faltantes: { type: 'integer', example: 0 },
+                        fecha_envio: { type: 'string', format: 'date-time', example: '2026-10-01T16:30:00.000Z' }
+                    }
+                },
+                EventoActualizadoPanel: {
+                    type: 'object',
+                    required: ['event_id', 'id_evento', 'id_usuario', 'nuevo_estado'],
+                    properties: {
+                        event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0851' },
+                        id_evento: { type: 'string', example: 'evt-001' },
+                        id_usuario: { type: 'string', example: 'usr-001' },
+                        nuevo_estado: { type: 'string', enum: ['borrador', 'cancelado', 'finalizado', 'publicado'] }
+                    }
+                },
+                EventoReprogramdoPanel: {
+                    type: 'object',
+                    required: ['event_id', 'id_evento', 'id_usuario', 'nuevo_estado', 'fecha_cambio', 'hora_cambio'],
+                    properties: {
+                        event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0852' },
+                        id_evento: { type: 'string', example: 'evt-001' },
+                        id_usuario: { type: 'string', example: 'usr-001' },
+                        nuevo_estado: { type: 'string', enum: ['borrador', 'cancelado', 'finalizado', 'publicado'] },
+                        fecha_cambio: { type: 'string', format: 'date', example: '2026-09-13' },
+                        hora_cambio: { type: 'string', example: '00:00:00' }
                     }
                 },
                 ResultadoEnvio: {

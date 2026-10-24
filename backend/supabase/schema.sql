@@ -1,6 +1,6 @@
 -- BASE DE DATOS - MODULO DE NOTIFICACIONES
 -- Supabase / PostgreSQL
--- Esquema final indicado para la integracion TicketU.
+-- Esquema final indicado para la integracion TicketU. eventos_procesado
 
 -- ------------------------------- ENTRADAS ---------------------------------
 CREATE TABLE IF NOT EXISTS public.entradas_usuario (
@@ -53,6 +53,12 @@ CREATE TABLE IF NOT EXISTS public.envios_notificacion (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT check_envios_estado
         CHECK (estado_envio IN ('PENDIENTE', 'ENVIADO', 'ERROR'))
+);
+
+-- ----------------------- EVENTOS UNICOS  --------------------------
+CREATE TABLE IF NOT EXISTS public.eventos_procesados (
+    clave_evento TEXT PRIMARY KEY,
+    processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- -------------------------------- INDICES ----------------------------------
