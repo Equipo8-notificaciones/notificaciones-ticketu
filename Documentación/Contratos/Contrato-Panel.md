@@ -80,9 +80,9 @@ Notificaciones informa el resultado directamente al organizador, mediante su pro
 | `id_evento` | `string` | Sí | Identificador del evento afectado. |
 | `id_usuario` | `string` | Sí | Identificador de quien cambió el estado del evento. |
 | `nuevo_estado` | `string` | Sí | Resultado del proceso de envío. Puede ser `exitoso` o `error`. |
-| `usuarios_notificados` | `integer` | Cantidad de usuarios a los que se envió la notificación correctamente. |
-| `usuarios_faltantes` | `integer` | Cantidad de usuarios a los que se les pudo enviar la notificación correctamente. |
-| `fecha_envio` | `timestamptz` | Fecha y hora en que finalizó el proceso de envío. |
+| `usuarios_notificados` | `integer` | Sí | Cantidad de usuarios a los que se envió la notificación correctamente. |
+| `usuarios_faltantes` | `integer` | Sí | Cantidad de usuarios a los que se les pudo enviar la notificación correctamente. |
+| `fecha_envio` | `timestamptz` | Sí | Fecha y hora en que finalizó el proceso de envío. |
 
 Ejemplo de notificación al organizador:
 ```
