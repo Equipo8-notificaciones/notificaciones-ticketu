@@ -10,17 +10,73 @@ const BASE_PATH = "/api/notificaciones";
 
 export type Notificacion = {
   id_notificacion: string | number;
+  id_usuario: string;
   tipo: string;
   titulo: string;
   mensaje: string;
   estado: "no_leida" | "leida" | "eliminada";
   fecha_emision: string;
   datos: Record<string, unknown>;
+  canal: "APP" | "EMAIL";
 };
+
+type NotificacionApi = {
+  id_notificacion: string | number;
+  id_usuario?: string;
+  tipo?: string;
+  titulo?: string;
+  mensaje: string;
+  estado?: string;
+  estado_lectura?: string;
+  fecha_emision?: string;
+  created_at?: string;
+  datos?: Record<string, unknown> | null;
+  canal?: string;
+};
+
+function normalizar_notificacion(valor: unknown): Notificacion {
+  if (typeof valor !== "object" || valor === null) {
+    throw new Error("El servicio devolvió una notificación inválida.");
+  }
+
+  const notificacion = valor as Partial<NotificacionApi>;
+  const tipo = notificacion.tipo ?? notificacion.titulo;
+  const estado = (notificacion.estado_lectura ?? notificacion.estado)?.toLowerCase();
+  const fecha_emision = notificacion.fecha_emision ?? notificacion.created_at;
+  const canal = notificacion.canal ?? "APP";
+
+  if (
+    (typeof notificacion.id_notificacion !== "string" &&
+      typeof notificacion.id_notificacion !== "number") ||
+    typeof notificacion.id_usuario !== "string" ||
+    typeof tipo !== "string" ||
+    typeof notificacion.mensaje !== "string" ||
+    (estado !== "no_leida" && estado !== "leida" && estado !== "eliminada") ||
+    typeof fecha_emision !== "string" ||
+    (canal !== "APP" && canal !== "EMAIL") ||
+    (notificacion.datos !== undefined &&
+      notificacion.datos !== null &&
+      (typeof notificacion.datos !== "object" || Array.isArray(notificacion.datos)))
+  ) {
+    throw new Error("El servicio devolvió una notificación con un formato inesperado.");
+  }
+
+  return {
+    id_notificacion: notificacion.id_notificacion,
+    id_usuario: notificacion.id_usuario,
+    tipo,
+    titulo: tipo,
+    mensaje: notificacion.mensaje,
+    estado,
+    fecha_emision,
+    datos: notificacion.datos ?? {},
+    canal,
+  };
+}
 
 function verificar_respuesta(res: Response, mensaje_error: string): void {
   if (res.status === 401) {
-    window.location.assign("/login");
+    window.location.assign("/auth");
     throw new Error("La sesión expiró. Inicia sesión nuevamente.");
   }
   if (res.status === 403) {
@@ -40,11 +96,13 @@ export async function obtener_notificaciones(signal?: AbortSignal): Promise<Noti
     credentials: "include",
   });
   verificar_respuesta(res, "Error al obtener las notificaciones del usuario");
-  const notificaciones = (await res.json()) as Notificacion[];
-  return notificaciones.map((notificacion) => ({
-    ...notificacion,
-    estado: notificacion.estado.toLowerCase() as Notificacion["estado"],
-  }));
+  const respuesta: unknown = await res.json();
+  if (!Array.isArray(respuesta)) {
+    throw new Error("El servicio devolvió una lista de notificaciones inválida.");
+  }
+  return respuesta
+    .map(normalizar_notificacion)
+    .filter((notificacion) => notificacion.tipo.toUpperCase() !== "COMPRA");
 }
 
 async function solicitar_actualizacion(

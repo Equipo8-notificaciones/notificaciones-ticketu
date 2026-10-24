@@ -12,6 +12,16 @@ type NotificationItemProps = {
   al_alternar_seleccion: () => void;
 };
 
+function obtener_texto_dato(
+  datos: Record<string, unknown>,
+  ...claves: string[]
+): string | undefined {
+  for (const clave of claves) {
+    if (typeof datos[clave] === "string") return datos[clave];
+  }
+  return undefined;
+}
+
 export default function NotificationItem({
   notificacion,
   modo_seleccion,
@@ -22,10 +32,70 @@ export default function NotificationItem({
 }: NotificationItemProps) {
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulsacion_larga = useRef(false);
-  const fecha_emision = new Intl.DateTimeFormat("es", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(notificacion.fecha_emision));
+  const fecha = new Date(notificacion.fecha_emision);
+  const fecha_emision = Number.isNaN(fecha.getTime())
+    ? notificacion.fecha_emision
+    : new Intl.DateTimeFormat("es", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(fecha);
+  const nombre_evento = obtener_texto_dato(
+    notificacion.datos,
+    "nombre_evento",
+    "nombreEvento"
+  );
+  const fecha_evento = obtener_texto_dato(
+    notificacion.datos,
+    "fecha_cambio",
+    "fecha_evento",
+    "fechaEvento"
+  );
+  const hora_evento = obtener_texto_dato(
+    notificacion.datos,
+    "hora_cambio",
+    "hora_evento",
+    "horaEvento"
+  );
+  const cantidad_entradas =
+    typeof notificacion.datos.cantidad_entradas === "number"
+      ? notificacion.datos.cantidad_entradas
+      : typeof notificacion.datos.cantidadEntradas === "number"
+        ? notificacion.datos.cantidadEntradas
+        : undefined;
+  const nuevo_estado = obtener_texto_dato(notificacion.datos, "nuevo_estado");
+  const tipo_normalizado = notificacion.tipo.toUpperCase();
+  const es_cambio_panel =
+    ["EVENTO_CAMBIO", "CAMBIO_EVENTO", "CANCELACION_EVENTO", "EVENTO_ACTUALIZADO", "EVENTO_REPROGRAMADO"]
+      .includes(tipo_normalizado) ||
+    (typeof notificacion.datos.id_evento === "string" && Boolean(nuevo_estado));
+  const es_reprogramacion_panel =
+    es_cambio_panel && nuevo_estado?.toLowerCase() === "publicado";
+  const estado_panel_esperado = es_reprogramacion_panel ? "publicado" : "cancelado";
+  const estado_panel_valido = nuevo_estado?.toLowerCase() === estado_panel_esperado;
+  const es_cancelacion_panel =
+    es_cambio_panel && !es_reprogramacion_panel && estado_panel_valido;
+  const usuarios_notificados =
+    typeof notificacion.datos.usuarios_notificados === "number"
+      ? notificacion.datos.usuarios_notificados
+      : undefined;
+  const usuarios_faltantes =
+    typeof notificacion.datos.usuarios_faltantes === "number"
+      ? notificacion.datos.usuarios_faltantes
+      : undefined;
+  const id_evento = obtener_texto_dato(notificacion.datos, "id_evento");
+  const es_resumen_panel =
+    es_cambio_panel &&
+    (usuarios_notificados !== undefined || usuarios_faltantes !== undefined);
+  const es_recordatorio = [
+    "RECORDATORIO",
+    "RECORDATORIO_24H",
+    "RECORDATORIO_30M",
+  ].includes(tipo_normalizado);
+  const titulo = es_recordatorio
+    ? "Recordatorio evento"
+    : es_cambio_panel
+      ? "Evento cambiado"
+      : notificacion.titulo;
 
   function iniciar_pulsacion_larga() {
     pulsacion_larga.current = false;
@@ -96,7 +166,7 @@ export default function NotificationItem({
         >
           {notificacion.tipo === "COMPRA" ? (
             <path d="m5 12 4 4L19 6" />
-          ) : notificacion.tipo === "RECORDATORIO" ? (
+          ) : es_recordatorio ? (
             <>
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 2" />
@@ -111,28 +181,73 @@ export default function NotificationItem({
       </div>
       <div className="contenido">
         <div className="titulo-fila">
-          <h3>{notificacion.titulo}</h3>
+          <h3>{titulo}</h3>
           {notificacion.estado === "no_leida" && (
             <span className="punto-no-leida" aria-label="Sin leer" />
           )}
         </div>
-        {notificacion.tipo === "RECORDATORIO" ? (
+        {es_recordatorio ? (
           <RecordatorioEvento notificacion={notificacion} />
         ) : (
           <>
-            {typeof notificacion.datos.nombreEvento === "string" && (
-              <p className="evento">{notificacion.datos.nombreEvento}</p>
+            {es_cancelacion_panel ? (
+              <>
+                <p className="detalle">Cancelado</p>
+                {nombre_evento && <p className="detalle">{nombre_evento}</p>}
+                {cantidad_entradas !== undefined && (
+                  <p className="detalle">
+                    {cantidad_entradas} {cantidad_entradas === 1 ? "entrada" : "entradas"}
+                  </p>
+                )}
+              </>
+            ) : es_resumen_panel ? (
+              <>
+                {nuevo_estado && (
+                  <p className="detalle">Estado: {nuevo_estado}</p>
+                )}
+                {(nombre_evento || id_evento) && (
+                  <p className="detalle">Evento: {nombre_evento ?? id_evento}</p>
+                )}
+                {(usuarios_notificados !== undefined ||
+                  usuarios_faltantes !== undefined) && (
+                  <p className="detalle">
+                    Usuarios notificados: {usuarios_notificados ?? 0};
+                    {" "}usuarios faltantes: {usuarios_faltantes ?? 0}
+                  </p>
+                )}
+              </>
+            ) : es_reprogramacion_panel ? (
+              <>
+                {nombre_evento && <p className="evento">{nombre_evento}</p>}
+                {hora_evento && (
+                  <p className="detalle">Nueva hora: {hora_evento}</p>
+                )}
+                {fecha_evento && (
+                  <p className="detalle">Nueva fecha: {fecha_evento}</p>
+                )}
+              </>
+            ) : (
+              <>
+                {nombre_evento && (
+                  <p className="evento">{nombre_evento}</p>
+                )}
+                {fecha_evento && (
+                  <p className="detalle">
+                    {notificacion.datos.fecha_cambio ? "Nueva fecha" : "Evento"}: {fecha_evento}
+                    {hora_evento ? ` · ${hora_evento}` : ""}
+                  </p>
+                )}
+                {es_cambio_panel && estado_panel_valido && nuevo_estado && (
+                  <p className="detalle">Estado: {nuevo_estado}</p>
+                )}
+              </>
             )}
-            {typeof notificacion.datos.fechaEvento === "string" && (
-              <p className="detalle">Evento: {notificacion.datos.fechaEvento}</p>
-            )}
-            {typeof notificacion.datos.cantidadEntradas === "number" && (
+            {cantidad_entradas !== undefined && (
               <p className="detalle">
-                {notificacion.datos.cantidadEntradas}{" "}
-                {notificacion.datos.cantidadEntradas === 1 ? "entrada" : "entradas"}
+                {cantidad_entradas} {cantidad_entradas === 1 ? "entrada" : "entradas"}
               </p>
             )}
-            {typeof notificacion.datos.nombreEvento !== "string" && (
+            {!nombre_evento && !es_cancelacion_panel && !es_reprogramacion_panel && !es_resumen_panel && (
               <p className="detalle">{notificacion.mensaje}</p>
             )}
             <p className="detalle">{fecha_emision}</p>

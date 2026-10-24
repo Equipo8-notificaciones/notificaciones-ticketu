@@ -5,35 +5,75 @@ type RecordatorioEventoProps = {
   notificacion: Notificacion;
 };
 
+function obtener_texto_dato(
+  datos: Record<string, unknown>,
+  ...claves: string[]
+): string | undefined {
+  for (const clave of claves) {
+    if (typeof datos[clave] === "string") return datos[clave];
+  }
+  return undefined;
+}
+
 export default function RecordatorioEvento({ notificacion }: RecordatorioEventoProps) {
-  const fecha_emision = new Intl.DateTimeFormat("es", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(notificacion.fecha_emision));
+  const fecha = new Date(notificacion.fecha_emision);
+  const fecha_emision = Number.isNaN(fecha.getTime())
+    ? notificacion.fecha_emision
+    : new Intl.DateTimeFormat("es", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(fecha);
+  const nombre_evento = obtener_texto_dato(
+    notificacion.datos,
+    "nombre_evento",
+    "nombreEvento"
+  );
+  const fecha_evento = obtener_texto_dato(
+    notificacion.datos,
+    "fecha_evento",
+    "fechaEvento",
+    "fecha_cambio"
+  );
+  const hora_evento = obtener_texto_dato(
+    notificacion.datos,
+    "hora_evento",
+    "horaEvento",
+    "hora_cambio"
+  );
+  const ubicacion = obtener_texto_dato(
+    notificacion.datos,
+    "ubicacion_evento",
+    "ubicacion"
+  );
+  const enlace_evento = obtener_texto_dato(
+    notificacion.datos,
+    "enlace_evento",
+    "enlaceEvento"
+  );
 
   return (
     <div className="notificacion-contenido">
       <div className="notificacion-texto">
-        {typeof notificacion.datos.nombreEvento === "string" && (
-          <p className="notificacion-detalle">{notificacion.datos.nombreEvento}</p>
+        {nombre_evento && (
+          <p className="notificacion-detalle">{nombre_evento}</p>
         )}
-        {typeof notificacion.datos.fechaEvento === "string" && (
+        {fecha_evento && (
           <p className="notificacion-detalle">
-            Fecha del evento: {notificacion.datos.fechaEvento}
+            Fecha del evento: {fecha_evento}
           </p>
         )}
-        {typeof notificacion.datos.horaEvento === "string" && (
-          <p className="notificacion-detalle">Hora: {notificacion.datos.horaEvento}</p>
+        {hora_evento && (
+          <p className="notificacion-detalle">Hora: {hora_evento}</p>
         )}
-        {typeof notificacion.datos.ubicacion === "string" && (
-          <p className="notificacion-detalle">Lugar: {notificacion.datos.ubicacion}</p>
+        {ubicacion && (
+          <p className="notificacion-detalle">Lugar: {ubicacion}</p>
         )}
-        {typeof notificacion.datos.enlaceEvento === "string" && (
-          <a className="notificacion-enlace" href={notificacion.datos.enlaceEvento}>
+        {enlace_evento && (
+          <a className="notificacion-enlace" href={enlace_evento}>
             Ver evento
           </a>
         )}
-        {!notificacion.datos.nombreEvento && (
+        {!nombre_evento && (
           <p className="notificacion-detalle">{notificacion.mensaje}</p>
         )}
         <p className="notificacion-fecha">{fecha_emision}</p>
