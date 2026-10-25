@@ -1,22 +1,18 @@
 const broker = require('./index');
-const {
-    manejarEntradaEmitida,
-    procesarEnvioCorreoEntradaEmitida,
-    TOPICO_INTERNO_ENVIO_CORREO
-} = require('../events/entradaEmitidaHandler');
-const { manejarRecuperacionCuenta, manejarCuentaStaff } = require('../events/authHandler');
-const { manejarEventoActualizado } = require('../events/panelEventoHandler');
+const { manejarEntradaEmitida } = require('../events/entradaEmitidaHandler');
+const { manejarRecuperacionCuenta, manejarCrearCuenta } = require('../events/authHandler');
+const { manejarEventoActualizado, manejarReprogramarEvento, manejarCancelarEvento } = require('../events/panelEventoHandler');
 
-
-//Registra los eventos que escucha Notificaciones
-function iniciarSuscripciones() {
-    broker.subscribe('entrada_emitida', manejarEntradaEmitida);
-    broker.subscribe('recuperacion_cuenta', manejarRecuperacionCuenta);
-    broker.subscribe('cuenta_staff', manejarCuentaStaff);
-    broker.subscribe('panel.evento.actualizado', manejarEventoActualizado);
-
-    // Procesa el envío interno de la notificación de compra.
-    broker.subscribe(TOPICO_INTERNO_ENVIO_CORREO, procesarEnvioCorreoEntradaEmitida);
+// Las suscripciones usan el routing key como identificador del contrato.
+async function iniciarSuscripciones() {
+    await Promise.all([
+        broker.subscribeToExchange('entradas.events', 'entradas_emitidas', manejarEntradaEmitida),
+        broker.subscribe('recuperacion_cuenta', manejarRecuperacionCuenta),
+        broker.subscribe('cuenta_staff', manejarCrearCuenta),
+        broker.subscribe('evento_actualizado', manejarEventoActualizado),
+        broker.subscribe('reprogramar_evento', manejarReprogramarEvento),
+        broker.subscribe('cancelar_evento', manejarCancelarEvento)
+    ]);
 }
 
 module.exports = { iniciarSuscripciones };

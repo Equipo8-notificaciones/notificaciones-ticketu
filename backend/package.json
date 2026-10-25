@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "test": "node --test",
-    "check": "node --check app.js"
+    "check": "node --check app.js",
+    "test:compra": "node tests/test_compra_entrada_rabbitmq.js"
   },
   "keywords": [
     "notificaciones",
@@ -18,8 +19,10 @@
   "dependencies": {
     "amqplib": "^0.10.4",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
     "express": "^5.2.1",
     "node-fetch": "^2.7.0",
+    "nodemailer": "^6.10.1",
     "pg": "^8.16.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

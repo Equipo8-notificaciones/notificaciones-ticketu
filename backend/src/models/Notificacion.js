@@ -1,63 +1,67 @@
-const { EstadosNotificacion, puedeTransicionar } = require('../utils/notificacionEstados');
+const EstadosNotificacion = Object.freeze({
+    NO_LEIDA: 'NO_LEIDA',
+    LEIDA: 'LEIDA',
+    ELIMINADA: 'ELIMINADA'
+});
 
 const TiposNotificacion = Object.freeze({
     COMPRA: 'COMPRA',
     RECORDATORIO: 'RECORDATORIO',
+    RECORDATORIO_24H: 'RECORDATORIO_24H',
+    RECORDATORIO_30M: 'RECORDATORIO_30M',
+    INICIO_EVENTO: 'INICIO_EVENTO',
     EVENTO_CAMBIO: 'EVENTO_CAMBIO',
-    RECUPERACION_PASSWORD: 'RECUPERACION_PASSWORD'
+    CAMBIO_EVENTO: 'CAMBIO_EVENTO',
+    CANCELACION_EVENTO: 'CANCELACION_EVENTO',
+    RECUPERACION_PASSWORD: 'RECUPERACION_PASSWORD',
+    CREACION_STAFF: 'CREACION_STAFF'
 });
+
+const CanalesNotificacion = Object.freeze({ APP: 'APP', EMAIL: 'EMAIL' });
 
 class Notificacion {
     constructor({
         id,
+        id_notificacion,
         usuarioId,
+        id_usuario,
         tipo,
         titulo,
         mensaje,
         datos = {},
-        fechaEmision = new Date().toISOString(),
         estado = EstadosNotificacion.NO_LEIDA,
-        fechaLectura = null,
+        estadoLectura,
         fechaEliminacion = null,
-        intentosEnvio = 0,
-        errorEnvio = null
+        canal = CanalesNotificacion.APP,
+        created_at
     }) {
-        this.id_notificacion = id;
-        this.usuario_id = usuarioId;
-        this.tipo = tipo;
-        this.titulo = titulo;
+        this.id_notificacion = id_notificacion ?? id;
+        this.id_usuario = String(id_usuario ?? usuarioId ?? '');
+        this.usuario_id = this.id_usuario;
+        this.tipo = tipo || titulo;
+        this.titulo = this.tipo; // compatibilidad del cliente anterior; no es una columna SQL
         this.mensaje = mensaje;
         this.datos = datos;
-        this.fecha_emision = fechaEmision;
-        this.estado = estado;
-        this.fecha_lectura = fechaLectura;
+        this.estado_lectura = estadoLectura || estado;
+        this.estado = this.estado_lectura;
         this.fecha_eliminacion = fechaEliminacion;
-        this.intentos_envio = intentosEnvio;
-        this.error_envio = errorEnvio;
+        this.canal = canal;
+        this.created_at = created_at || new Date().toISOString();
+        this.fecha_emision = this.created_at;
     }
 
     marcarComoLeida() {
-        if (!puedeTransicionar(this.estado, EstadosNotificacion.LEIDA)) {
-            if (this.estado === EstadosNotificacion.LEIDA) return this;
-            throw new Error(`No se puede cambiar de ${this.estado} a ${EstadosNotificacion.LEIDA}`);
-        }
-
-        this.estado = EstadosNotificacion.LEIDA;
-        this.fecha_lectura = new Date().toISOString();
+        this.estado_lectura = 'LEIDA';
+        this.estado = 'LEIDA';
         return this;
     }
 
     eliminar() {
-        if (this.estado === EstadosNotificacion.ELIMINADA) return this;
-
-        if (!puedeTransicionar(this.estado, EstadosNotificacion.ELIMINADA)) {
-            throw new Error(`No se puede cambiar de ${this.estado} a ${EstadosNotificacion.ELIMINADA}`);
-        }
-
-        this.estado = EstadosNotificacion.ELIMINADA;
+        this.estado_lectura = 'ELIMINADA';
+        this.estado = 'ELIMINADA';
         this.fecha_eliminacion = new Date().toISOString();
         return this;
     }
 }
 
-module.exports = { Notificacion, EstadosNotificacion, TiposNotificacion };
+module.exports = { Notificacion, EstadosNotificacion, TiposNotificacion, CanalesNotificacion };

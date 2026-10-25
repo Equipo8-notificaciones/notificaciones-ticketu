@@ -1,4 +1,6 @@
-//Define las operaciones del repositorio de notificaciones
+
+//Define las funciones que se usan para guardar y buscar notificaciones.
+
 class IRepositorioNotificacion {
     async save() {
         throw new Error('Método save() no implementado');
