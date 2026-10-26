@@ -1,3 +1,5 @@
+const { createHash } = require('node:crypto');
+
 const getPool = () => require('../config/database').getPool();
 
 function createEventDeduplicationService(getDatabasePool = getPool) {
@@ -5,15 +7,13 @@ function createEventDeduplicationService(getDatabasePool = getPool) {
     const enProceso = new Map();
 
     async function procesarUnaVez(exchange, routingKey, evento, handler) {
-        const eventId = String(evento?.event_id ?? '').trim();
-        if (!eventId) {
-            throw new Error(`El evento "${routingKey}" debe incluir un event_id único.`);
-        }
         if (typeof handler !== 'function') {
             throw new Error('Se requiere un handler para procesar el evento.');
         }
 
-        const clave = `${exchange}:${routingKey}:${eventId}`;
+        const contenido = serializarOrdenado(evento);
+        const huella = createHash('sha256').update(contenido).digest('hex');
+        const clave = `${exchange}:${routingKey}:sha256:${huella}`;
         const pool = getDatabasePool();
         if (pool) return procesarConBaseDatos(pool, clave, handler);
         return procesarEnMemoria(clave, handler);
@@ -79,6 +79,19 @@ function createEventDeduplicationService(getDatabasePool = getPool) {
     }
 
     return { procesarUnaVez };
+}
+
+function serializarOrdenado(valor) {
+    if (Array.isArray(valor)) {
+        return `[${valor.map(serializarOrdenado).join(',')}]`;
+    }
+    if (valor && typeof valor === 'object') {
+        const propiedades = Object.keys(valor).sort().map(clave =>
+            `${JSON.stringify(clave)}:${serializarOrdenado(valor[clave])}`
+        );
+        return `{${propiedades.join(',')}}`;
+    }
+    return JSON.stringify(valor);
 }
 
 module.exports = {

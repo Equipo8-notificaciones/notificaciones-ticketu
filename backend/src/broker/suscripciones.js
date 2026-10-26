@@ -18,7 +18,7 @@ async function iniciarSuscripciones() {
     await Promise.all([
         suscribirEvento(EXCHANGE_ENTRADAS, 'entradas_emitidas', manejarEntradaEmitida),
         suscribirEvento(EXCHANGE_AUTH, 'recuperacion_cuenta', manejarRecuperacionCuenta),
-        suscribirEvento(EXCHANGE_AUTH, 'creacion_cuenta', manejarCrearCuenta),
+        suscribirEvento(EXCHANGE_AUTH, 'cuenta_staff', manejarCrearCuenta),
         suscribirEvento(EXCHANGE_PANEL, 'evento_actualizado', manejarEventoActualizado),
         suscribirEvento(EXCHANGE_PANEL, 'evento_reprogramado', manejarEventoReprogramado)
     ]);

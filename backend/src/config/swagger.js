@@ -54,12 +54,12 @@ const options = {
                 },
                 AuthResultadoNotificacion: {
                     type: 'object',
-                    description: 'Resultado publicado por Notificaciones hacia AUTH en notificaciones.auth.resultado.',
+                    description: 'Resultado publicado por Notificaciones en notificaciones.events con routing key correo_auth.',
+                    required: ['email_destino', 'estado_envio'],
                     properties: {
                         email_destino: { type: 'string', format: 'email', example: 'usuario@ejemplo.com' },
-                        gmail_destino: { type: 'string', format: 'email', nullable: true },
                         estado_envio: { type: 'string', enum: ['exitoso', 'error'] },
-                        error_envio: { type: 'string', nullable: true }
+                        Error_envio: { type: 'string' }
                     }
                 },
                 PanelResultadoNotificacion: {
@@ -77,9 +77,8 @@ const options = {
                 },
                 EventoActualizadoPanel: {
                     type: 'object',
-                    required: ['event_id', 'id_evento', 'id_usuario', 'nuevo_estado'],
+                    required: ['id_evento', 'id_usuario', 'nuevo_estado'],
                     properties: {
-                        event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0851' },
                         id_evento: { type: 'string', example: 'evt-001' },
                         id_usuario: { type: 'string', example: 'usr-001' },
                         nuevo_estado: { type: 'string', enum: ['cancelado'] }
@@ -87,9 +86,8 @@ const options = {
                 },
                 EventoReprogramadoPanel: {
                     type: 'object',
-                    required: ['event_id', 'id_evento', 'id_usuario', 'nuevo_estado', 'fecha_cambio', 'hora_cambio'],
+                    required: ['id_evento', 'id_usuario', 'nuevo_estado', 'fecha_cambio', 'hora_cambio'],
                     properties: {
-                        event_id: { type: 'string', format: 'uuid', example: 'd290f1ee-6c54-4b01-90e6-d701748f0852' },
                         id_evento: { type: 'string', example: 'evt-001' },
                         id_usuario: { type: 'string', example: 'usr-001' },
                         nuevo_estado: { type: 'string', enum: ['publicado'] },

@@ -1,11 +1,9 @@
 const assert = require('node:assert/strict');
-const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 const { createEventDeduplicationService } = require('../../src/services/eventDeduplicationService');
 
-test('procesa una sola vez el mismo event_id en el mismo exchange y routing key', async () => {
+test('deduplica payloads iguales sin requerir event_id', async () => {
     const deduplicador = createEventDeduplicationService(() => null);
-    const eventId = randomUUID();
     let ejecuciones = 0;
     const handler = async () => {
         ejecuciones++;
@@ -13,10 +11,10 @@ test('procesa una sola vez el mismo event_id en el mismo exchange y routing key'
     };
 
     const primera = await deduplicador.procesarUnaVez(
-        'entradas.events', 'entradas_emitidas', { event_id: eventId }, handler
+        'entradas.events', 'entradas_emitidas', { id_usuario: 'usr-1', id_evento: 'evt-1' }, handler
     );
     const segunda = await deduplicador.procesarUnaVez(
-        'entradas.events', 'entradas_emitidas', { event_id: eventId }, handler
+        'entradas.events', 'entradas_emitidas', { id_evento: 'evt-1', id_usuario: 'usr-1' }, handler
     );
 
     assert.deepEqual(primera, { duplicado: false, resultado: 'procesado' });
@@ -24,40 +22,35 @@ test('procesa una sola vez el mismo event_id en el mismo exchange y routing key'
     assert.equal(ejecuciones, 1);
 });
 
-test('eventos con event_id distintos se procesan aunque pertenezcan al mismo evento de negocio', async () => {
+test('payloads diferentes se procesan aunque compartan el mismo evento de negocio', async () => {
     const deduplicador = createEventDeduplicationService(() => null);
     let ejecuciones = 0;
 
     await deduplicador.procesarUnaVez(
         'panel.evento.notificaciones.v1',
         'evento_actualizado',
-        { event_id: randomUUID(), id_evento: 'evento-1' },
+        { id_evento: 'evento-1', id_usuario: 'staff-1', nuevo_estado: 'cancelado' },
         async () => { ejecuciones++; }
     );
     await deduplicador.procesarUnaVez(
         'panel.evento.notificaciones.v1',
         'evento_actualizado',
-        { event_id: randomUUID(), id_evento: 'evento-1' },
+        { id_evento: 'evento-1', id_usuario: 'staff-2', nuevo_estado: 'cancelado' },
         async () => { ejecuciones++; }
     );
 
     assert.equal(ejecuciones, 2);
 });
 
-test('requiere event_id y permite reintentar si el handler falla', async () => {
+test('permite reintentar el mismo payload si el handler falla', async () => {
     const deduplicador = createEventDeduplicationService(() => null);
-    const eventId = randomUUID();
     let ejecuciones = 0;
 
-    await assert.rejects(
-        deduplicador.procesarUnaVez('auth.events', 'recuperacion_cuenta', {}, async () => {}),
-        /event_id único/
-    );
     await assert.rejects(
         deduplicador.procesarUnaVez(
             'auth.events',
             'recuperacion_cuenta',
-            { event_id: eventId },
+            { id_usuario: 'usr-1', gmail_destino: 'user@example.com' },
             async () => {
                 ejecuciones++;
                 throw new Error('fallo temporal');
@@ -69,7 +62,7 @@ test('requiere event_id y permite reintentar si el handler falla', async () => {
     const reintento = await deduplicador.procesarUnaVez(
         'auth.events',
         'recuperacion_cuenta',
-        { event_id: eventId },
+        { gmail_destino: 'user@example.com', id_usuario: 'usr-1' },
         async () => {
             ejecuciones++;
             return 'recuperado';

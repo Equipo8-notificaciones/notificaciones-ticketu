@@ -108,7 +108,6 @@ async function main() {
 
     // Replica las ocho propiedades publicadas por NotificacionesService en Entradas.
     const eventoCompra = {
-        event_id: randomUUID(),
         correo_comprador: 'temoomet1234@gmail.com',
         nombre_comprador: 'Comprador de Prueba',
         id_usuario: idUsuario,

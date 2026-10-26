@@ -1,5 +1,4 @@
 const assert = require('node:assert/strict');
-const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 const { planificarRecordatorio } = require('../../src/jobs/notificacionJobs');
 const entradasService = require('../../src/services/entradasService');
@@ -32,7 +31,6 @@ function crearEventoEnHoras(horas) {
     const pad = (valor) => String(valor).padStart(2, '0');
 
     return {
-        event_id: randomUUID(),
         correo_comprador: 'prueba@example.com',
         id_usuario: 'usuario-prueba',
         nombre_comprador: 'Usuario de prueba',

@@ -84,10 +84,12 @@ class NotificacionService {
         return repo.softDeleteMany(ids, usuarioId);
     }
 
-    // Cada intento se persiste como PENDIENTE y luego se cierra como ENVIADO o ERROR.
-    // De este modo queda un registro independiente por cada reintento.
+    // Los reintentos se realizan inmediatamente después de cada fallo.
     async enviarConReintentos(id, canal, funcionEnvio, maxIntentos = 3) {
         if (typeof funcionEnvio !== 'function') throw new Error('Debe indicar la función de envío');
+        if (!Number.isInteger(maxIntentos) || maxIntentos < 1) {
+            throw new Error('maxIntentos debe ser un entero mayor que 0');
+        }
         const notificacion = await this.obtenerPorId(id);
         const canalFinal = canal || notificacion.canal || 'APP';
         let ultimoError;
@@ -107,7 +109,9 @@ class NotificacionService {
             }
         }
 
-        const errorFinal = new Error(`Falló el envío después de ${maxIntentos} intentos: ${ultimoError?.message || 'error desconocido'}`);
+        const errorFinal = new Error(
+            `Falló el envío después de ${maxIntentos} intentos: ${ultimoError?.message || 'error desconocido'}`
+        );
         errorFinal.cause = ultimoError;
         errorFinal.intentos = maxIntentos;
         throw errorFinal;

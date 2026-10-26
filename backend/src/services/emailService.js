@@ -30,6 +30,9 @@ async function enviarCorreo(destino, asunto, cuerpo) {
 // Se mantiene como utilidad para otros módulos; los handlers de este proyecto
 // usan notificacionService.enviarConReintentos para registrar cada intento en BD.
 async function enviarCorreoConReintentos(destino, asunto, cuerpo, maxReintentos = 3) {
+    if (!Number.isInteger(maxReintentos) || maxReintentos < 1) {
+        throw new Error('maxReintentos debe ser un entero mayor que 0');
+    }
     let ultimoError;
     for (let intento = 1; intento <= maxReintentos; intento++) {
         try {
