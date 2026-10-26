@@ -31,6 +31,7 @@ contraseña o crea una cuenta de staff.
 (La comunicación se realiza mediante un broker de mensajes en formato de evento asíncrono).
 
 ### 2.5 Request (lo que se envía)
+Exchange: auth.events
 * **recuperacion_cuenta:**
 
 | Campo | Tipo | Obligatorio | Descripción |
@@ -66,6 +67,7 @@ cuenta_staff:
 ```
 
 ### 2.6 Response (lo que se recibe)
+Exchange: notificaciones.events, evento: correo_auth
 Para ambos eventos son enviados los datos.
 
 | Campo | Tipo | Obligatorio | Descripción |
