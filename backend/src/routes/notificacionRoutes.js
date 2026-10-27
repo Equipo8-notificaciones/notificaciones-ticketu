@@ -72,6 +72,32 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /api/notificaciones/eventos:
+ *   get:
+ *     summary: Obtener las notificaciones del usuario para el front
+ *     description: Alias del centro de notificaciones, ordenado de la más reciente a la más antigua.
+ *     tags: [Notificaciones]
+ *     responses:
+ *       200:
+ *         description: Lista de notificaciones del usuario.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Notificacion'
+ */
+router.get('/eventos', async (req, res) => {
+    try {
+        const notificaciones = await notificacionService.obtenerCentro(req.user.id_usuario);
+        res.json(notificaciones);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+/**
+ * @swagger
  * /api/notificaciones/{id}:
  *   get:
  *     summary: Obtener una notificación por ID
