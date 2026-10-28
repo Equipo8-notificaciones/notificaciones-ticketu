@@ -5,7 +5,7 @@ const broker = require('../broker');
 const { planificarRecordatorio } = require('../jobs/notificacionJobs');
 const { programarRecordatorioEvento } = require('../services/recordatorioEventoService');
 
-const EXCHANGE_CONFIRMACION = 'notificaciones.event';
+const EXCHANGE_CONFIRMACION = 'notificaciones.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
 
 // Procesa la compra recibida desde Entradas/RabbitMQ.
@@ -19,11 +19,10 @@ async function manejarEntradaEmitida(evento) {
         nombre_evento: nombreEvento,
         fecha_evento: fechaEvento,
         hora_evento: horaEvento,
-        qr_data: qrData,
-        ubicacion_evento: ubicacionEvento
+        qr_data: qrData
     } = evento;
 
-    await publicarConfirmacion(idUsuario, idEvento, 'en_cola');
+    await publicarConfirmacion();
     const plan = planificarRecordatorio(fechaEvento, horaEvento);
     const pool = require('../config/database').getPool();
     const fechaPersistir = evento.fecha_evento.includes('T')
@@ -91,17 +90,13 @@ async function manejarEntradaEmitida(evento) {
         id_evento: String(idEvento),
         nombre_evento: nombreEvento,
         fecha_evento: fechaEvento,
-        hora_evento: horaEvento,
-        ubicacion_evento: ubicacionEvento
+        hora_evento: horaEvento
     };
     if (plan.enviarAhora && plan.fechaEvento.getTime() > Date.now()) {
         await programarRecordatorioEvento(datosRecordatorio)
             .catch(error => console.error('[entradaEmitidaHandler] error en recordatorio:', error.message));
     } else if (plan.fechaEnvio && plan.fechaEnvio.getTime() > Date.now()) {
-        const recordatorio = await programarRecordatorioEvento(datosRecordatorio);
-        if (recordatorio.programado) {
-            await publicarConfirmacion(idUsuario, idEvento, 'programado');
-        }
+        await programarRecordatorioEvento(datosRecordatorio);
     }
 
     return {
@@ -117,12 +112,8 @@ async function manejarEntradaEmitida(evento) {
     };
 }
 
-async function publicarConfirmacion(idUsuario, idEvento, estado) {
-    const payload = {
-        id_usuario: String(idUsuario),
-        id_evento: String(idEvento),
-        estado
-    };
+async function publicarConfirmacion() {
+    const payload = { estado: 'en_cola' };
     if (typeof broker.publishToExchange !== 'function') {
         throw new Error('El broker debe permitir publicar confirmaciones en un exchange específico.');
     }

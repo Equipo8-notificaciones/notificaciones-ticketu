@@ -13,8 +13,6 @@ const TiposNotificacion = Object.freeze({
     EVENTO_CAMBIO: 'EVENTO_CAMBIO',
     CAMBIO_EVENTO: 'CAMBIO_EVENTO',
     CANCELACION_EVENTO: 'CANCELACION_EVENTO',
-    RECUPERACION_PASSWORD: 'RECUPERACION_PASSWORD',
-    CREACION_STAFF: 'CREACION_STAFF'
 });
 
 const CanalesNotificacion = Object.freeze({ APP: 'APP', EMAIL: 'EMAIL' });

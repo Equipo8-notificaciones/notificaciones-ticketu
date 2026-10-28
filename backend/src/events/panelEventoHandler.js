@@ -4,15 +4,47 @@ const entradasService = require('../services/entradasService');
 const recordatorioEventoService = require('../services/recordatorioEventoService');
 
 async function manejarEventoActualizado(evento) {
-    return procesarEventoPanel(evento, false);
+    validarEvento(evento, false);
+    const {
+        id_evento: idEvento,
+        id_usuario: idUsuario,
+        nuevo_estado: estado
+    } = evento;
+    return procesarEventoPanel({
+        idEvento: String(idEvento).trim(),
+        idUsuario: String(idUsuario).trim(),
+        estado: String(estado).trim().toLowerCase(),
+        reprogramado: false
+    });
 }
 
 async function manejarEventoReprogramado(evento) {
-    return procesarEventoPanel(evento, true);
+    validarEvento(evento, true);
+    const {
+        id_evento: idEvento,
+        id_usuario: idUsuario,
+        nuevo_estado: estado,
+        fecha_cambio: fechaCambio,
+        hora_cambio: horaCambio
+    } = evento;
+    return procesarEventoPanel({
+        idEvento: String(idEvento).trim(),
+        idUsuario: String(idUsuario).trim(),
+        estado: String(estado).trim().toLowerCase(),
+        fechaCambio,
+        horaCambio,
+        reprogramado: true
+    });
 }
 
-async function procesarEventoPanel(evento, reprogramado) {
-    const { idEvento, idUsuario, estado } = validarEvento(evento, reprogramado);
+async function procesarEventoPanel({
+    idEvento,
+    idUsuario,
+    estado,
+    fechaCambio,
+    horaCambio,
+    reprogramado
+}) {
     const { fecha_evento: fechaEventoDb, es_futuro: eventoFuturo } =
         await entradasService.obtenerFechaEvento(idEvento);
     const fechaEvento = new Date(fechaEventoDb);
@@ -27,8 +59,8 @@ async function procesarEventoPanel(evento, reprogramado) {
     if (reprogramado) {
         const entradasActualizadas = await entradasService.actualizarFechaEvento(
             idEvento,
-            evento.fecha_cambio,
-            evento.hora_cambio
+            fechaCambio,
+            horaCambio
         );
         usuarios = [...new Map(
             entradasActualizadas
@@ -41,8 +73,8 @@ async function procesarEventoPanel(evento, reprogramado) {
                 id_usuario: String(usuario.id_usuario),
                 id_evento: idEvento,
                 nombre_evento: usuario.nombre_evento,
-                fecha_evento: evento.fecha_cambio,
-                hora_evento: evento.hora_cambio
+                fecha_evento: fechaCambio,
+                hora_evento: horaCambio
             };
             await recordatorioEventoService.programarRecordatorioEvento(datosRecordatorio).catch(error => {
                 console.error(
@@ -70,14 +102,20 @@ async function procesarEventoPanel(evento, reprogramado) {
                 id_usuario: idDestinatario,
                 tipo: 'EVENTO_CAMBIO',
                 canal: 'APP',
-                mensaje: crearMensaje(evento, estado, reprogramado),
+                mensaje: crearMensaje({
+                    idEvento,
+                    estado,
+                    fechaCambio,
+                    horaCambio,
+                    reprogramado
+                }),
                 datos: {
                     id_evento: idEvento,
                     nuevo_estado: estado,
                     nombre_evento: destinatarios.get(idDestinatario)?.nombre_evento,
                     ...(reprogramado && {
-                        fecha_evento: evento.fecha_cambio,
-                        hora_evento: evento.hora_cambio
+                        fecha_evento: fechaCambio,
+                        hora_evento: horaCambio
                     })
                 }
             });
@@ -117,9 +155,12 @@ function validarEvento(evento, reprogramado) {
 
     if (!idEvento) throw new Error('Debe indicar id_evento.');
     if (!idUsuario) throw new Error('Debe indicar id_usuario para enviar la confirmación.');
-    const estadoEsperado = reprogramado ? 'publicado' : 'cancelado';
-    if (estado !== estadoEsperado) {
-        throw new Error(`nuevo_estado para ${reprogramado ? 'evento_reprogramado' : 'evento_actualizado'} debe ser ${estadoEsperado}.`);
+    const estadosEsperados = reprogramado ? ['publicado', 'reprogramado'] : ['cancelado'];
+    if (!estadosEsperados.includes(estado)) {
+        throw new Error(
+            `nuevo_estado para ${reprogramado ? 'evento_reprogramado' : 'evento_actualizado'} ` +
+            `debe ser ${estadosEsperados.join(' o ')}.`
+        );
     }
     if (reprogramado && (!esFechaValida(evento.fecha_cambio) || !esHoraValida(evento.hora_cambio))) {
         throw new Error('evento_reprogramado debe incluir fecha_cambio (AAAA-MM-DD) y hora_cambio (HH:mm[:ss]) válidas.');
@@ -143,12 +184,12 @@ function esHoraValida(valor) {
         Number(partes[3] ?? 0) <= 59);
 }
 
-function crearMensaje(evento, estado, reprogramado) {
+function crearMensaje({ idEvento, estado, fechaCambio, horaCambio, reprogramado }) {
     if (reprogramado) {
-        return `El evento ${evento.id_evento} fue reprogramado para el ${evento.fecha_cambio} a las ${evento.hora_cambio}.`;
+        return `El evento ${idEvento} fue reprogramado para el ${fechaCambio} a las ${horaCambio}.`;
     }
-    if (estado === 'cancelado') return `El evento ${evento.id_evento} fue cancelado.`;
-    return `El estado del evento ${evento.id_evento} cambió a ${estado}.`;
+    if (estado === 'cancelado') return `El evento ${idEvento} fue cancelado.`;
+    return `El estado del evento ${idEvento} cambió a ${estado}.`;
 }
 
 async function notificarOrganizador(idUsuario, resultado) {

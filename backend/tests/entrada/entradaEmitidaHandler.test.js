@@ -50,12 +50,12 @@ test('compra crea notificaciones APP y EMAIL y programa recordatorio', async () 
     assert.equal(resultado.estado_correo, 'error');
     assert.equal(resultado.notificacion_app.canal, 'APP');
     assert.equal(resultado.notificacion_email.canal, 'EMAIL');
-    assert.deepEqual(confirmaciones.map(confirmacion => confirmacion.payload.estado), ['en_cola', 'programado']);
+    assert.deepEqual(confirmaciones.map(confirmacion => confirmacion.payload.estado), ['en_cola']);
     assert.ok(confirmaciones.every(confirmacion =>
-        confirmacion.exchange === 'notificaciones.event' &&
+        confirmacion.exchange === 'notificaciones.events' &&
         confirmacion.topic === 'notificaciones.confirmacion_envio' &&
-        confirmacion.payload.id_usuario === evento.id_usuario &&
-        confirmacion.payload.id_evento === evento.id_evento
+        Object.keys(confirmacion.payload).length === 1 &&
+        Object.hasOwn(confirmacion.payload, 'estado')
     ));
 });
 
@@ -67,6 +67,5 @@ test('compra con menos de 24 horas crea recordatorio inmediatamente', async () =
     assert.equal(resultado.estado_correo, 'error');
     assert.equal(resultado.notificacion_app.titulo, 'COMPRA');
     assert.deepEqual(confirmaciones.map(confirmacion => confirmacion.payload.estado), ['en_cola']);
-    assert.equal(confirmaciones[0].payload.id_usuario, evento.id_usuario);
-    assert.equal(confirmaciones[0].payload.id_evento, evento.id_evento);
+    assert.deepEqual(confirmaciones[0].payload, { estado: 'en_cola' });
 });

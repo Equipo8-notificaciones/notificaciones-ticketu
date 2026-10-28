@@ -20,6 +20,12 @@ Set-Location "C:\Users\gherr\Downloads\Notificaciones-Ticketu\notificaciones\bac
 npm run test:auth-integration
 ```
 
+También puedes ejecutar el archivo directamente desde la carpeta `backend`:
+
+```powershell
+node --test tests\auth\autentificacion\test_notificaciones_con_autentificacion.js
+```
+
 El test genera las credenciales automáticamente y no imprime la contraseña. Requiere Docker Compose, Node.js y npm. Si faltan las dependencias de Auth o Notificaciones, el test ejecuta `npm install` en el proyecto correspondiente.
 
 El resultado esperado es `pass 1` y:

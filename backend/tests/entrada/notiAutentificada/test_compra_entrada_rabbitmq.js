@@ -11,7 +11,7 @@ const amqp = require('amqplib');
 
 const EXCHANGE_ENTRADAS = 'entradas.events';
 const ROUTING_KEY_ENTRADAS = 'entradas_emitidas';
-const EXCHANGE_CONFIRMACION = 'notificaciones.event';
+const EXCHANGE_CONFIRMACION = 'notificaciones.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
 const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@rabbitmq:5672';
 const NOTIFICACIONES_URL = process.env.NOTIFICACIONES_URL || 'http://notificaciones:3000';
@@ -50,9 +50,8 @@ async function esperarConfirmacion(channel, queue, timeoutMs) {
                 }
                 channel.ack(message);
                 if (payload &&
-                    ['en_cola', 'programado'].includes(payload.estado) &&
-                    typeof payload.id_usuario === 'string' &&
-                    typeof payload.id_evento === 'string') {
+                    payload.estado === 'en_cola' &&
+                    Object.keys(payload).length === 1) {
                     clearTimeout(timer);
                     resolve(payload);
                 }
@@ -144,9 +143,8 @@ async function main() {
         await channel.waitForConfirms();
 
         const confirmacion = await confirmationPromise;
-        assert.ok(['en_cola', 'programado'].includes(confirmacion.estado), 'La confirmación debe informar si quedó en cola o programada');
-        assert.equal(confirmacion.id_usuario, idUsuario);
-        assert.equal(confirmacion.id_evento, idEvento);
+        assert.equal(confirmacion.estado, 'en_cola');
+        assert.deepEqual(confirmacion, { estado: 'en_cola' });
 
         const notificacion = await comprobarNotificacionApp(idUsuario, idEvento, TIMEOUT_MS);
         assert.equal(notificacion.tipo, 'COMPRA');

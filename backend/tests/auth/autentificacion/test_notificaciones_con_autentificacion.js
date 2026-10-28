@@ -6,7 +6,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { after, before } = require('node:test');
 
-const BACKEND_DIR = path.resolve(__dirname, '../..');
+const BACKEND_DIR = path.resolve(__dirname, '../../..');
 const AUTH_DIR = path.resolve(BACKEND_DIR, '../../auth/backend');
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:10000';
 const NOTIFICACIONES_URL = process.env.NOTIFICACIONES_URL || 'http://localhost:3001';

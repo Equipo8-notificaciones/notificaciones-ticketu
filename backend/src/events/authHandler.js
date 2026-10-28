@@ -1,67 +1,69 @@
-const notificacionService = require('../services/notificacionService');
 const emailService = require('../services/emailService');
 const broker = require('../broker');
 
 const EXCHANGE_NOTIFICACIONES = 'notificaciones.events';
+const CONFIG_RECUPERACION_CUENTA = {
+    routingKey: 'recuperacion_cuenta',
+    asunto: 'Restablecer contraseña',
+    mensaje: 'Solicitud para restablecer la contraseña'
+};
+const CONFIG_CUENTA_STAFF = {
+    routingKey: 'cuenta_staff',
+    asunto: 'Cuenta creada de Staff',
+    mensaje: 'Se ha creado una cuenta de staff'
+};
 
-// AUTH publica el evento en el routing key correspondiente. El payload no necesita
-// traer un campo "tipo" porque el propio routing key ya identifica la operación.
+// Maneja el evento de recuperación de cuenta recibido desde Auth/RabbitMQ
 async function manejarRecuperacionCuenta(evento) {
-    return procesarEventoAuth(evento, {
-        routingKey: 'recuperacion_cuenta',
-        tipoNotificacion: 'RECUPERACION_PASSWORD',
-        asunto: 'Restablecer contraseña',
-        mensaje: 'Solicitud para restablecer la contraseña'
-    });
+    validar(evento, CONFIG_RECUPERACION_CUENTA.routingKey);
+    const {
+        email_destino: emailDestino,
+        url
+    } = evento;
+    return procesarEventoAuth(emailDestino, url, CONFIG_RECUPERACION_CUENTA);
 }
 
 async function manejarCrearCuenta(evento) {
-    return procesarEventoAuth(evento, {
-        routingKey: 'cuenta_staff',
-        tipoNotificacion: 'CREACION_STAFF',
-        asunto: 'Cuenta creada de Staff',
-        mensaje: 'Se ha creado una cuenta de staff'
-    });
+    validar(evento, CONFIG_CUENTA_STAFF.routingKey);
+    const {
+        email_destino: emailDestino,
+        url
+    } = evento;
+    return procesarEventoAuth(emailDestino, url, CONFIG_CUENTA_STAFF);
 }
 
-async function procesarEventoAuth(evento, config) {
-    validar(evento, config.routingKey);
+async function procesarEventoAuth(emailDestino, url, config) {
+    const {
+        routingKey,
+        asunto,
+        mensaje
+    } = config;
 
-    const usuarioId = String(evento.id_usuario ?? evento.email_destino).trim();
-    const gmailDestino = String(evento.email_destino).trim();
-    const url = String(evento.url || '').trim();
-
-    const notificacion = await notificacionService.crearNotificacion({
-        usuarioId,
-        tipo: config.tipoNotificacion,
-        canal: 'EMAIL',
-        mensaje: `${config.mensaje}. Enlace: ${url}`,
-        datos: { gmail_destino: gmailDestino, url, origen: 'AUTH' }
-    });
+    const emailDestinoNormalizado = String(emailDestino).trim();
+    const urlNormalizada = String(url).trim();
 
     let resultado;
     try {
-        await notificacionService.enviarConReintentos(
-            notificacion.id_notificacion,
-            'EMAIL',
-            () => emailService.enviarCorreo(gmailDestino, config.asunto, `${config.mensaje}:\n${url}`),
+        await emailService.enviarCorreoConReintentos(
+            emailDestinoNormalizado,
+            asunto,
+            `${mensaje}:\n${urlNormalizada}`,
             3
         );
         resultado = {
-            email_destino: gmailDestino,
+            email_destino: emailDestinoNormalizado,
             estado_envio: 'exitoso'
         };
     } catch (error) {
         resultado = {
-            email_destino: gmailDestino,
+            email_destino: emailDestinoNormalizado,
             estado_envio: 'error',
-            Error_envio: error.message
+            error_envio: error.message
         };
     }
 
-    // Se informa a AUTH tanto si el envío se realizó como si agotó los reintentos.
     await broker.publishToExchange(EXCHANGE_NOTIFICACIONES, 'correo_auth', resultado);
-    return { ...resultado, id_notificacion: notificacion.id_notificacion, tipo_notificacion: config.tipoNotificacion };
+    return resultado;
 }
 
 function validar(evento, routingKey) {

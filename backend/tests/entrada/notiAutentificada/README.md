@@ -4,9 +4,9 @@ Este test de integración está ubicado junto a las pruebas de Entradas. Simula 
 
 - Exchange de entrada: `entradas.events`
 - Routing key de entrada: `entradas_emitidas`
-- Exchange de confirmación: `notificaciones.event`
+- Exchange de confirmación: `notificaciones.events`
 - Routing key de confirmación: `notificaciones.confirmacion_envio`
-- La confirmación incluye `id_usuario`, `id_evento` y `estado` (`en_cola` al recibir el evento; `programado` cuando se agenda el recordatorio).
+- La confirmación incluye únicamente `estado: "en_cola"`.
 - La prueba genera identificadores únicos y utiliza una cola temporal de confirmación.
 
 ## Ejecutar con Docker

@@ -120,7 +120,7 @@ test('evento_actualizado considera error cuando solo se notifica al 60% de los u
     assert.equal(creadas.at(-1).datos.nuevo_estado, 'error');
 });
 
-test('evento_reprogramado solo acepta publicado y notifica con la nueva fecha y hora', async () => {
+test('evento_reprogramado acepta publicado y notifica con la nueva fecha y hora', async () => {
     const creadas = prepararNotificaciones({
         usuarios: ['user-1', 'user-2', 'user-3']
             .map(id_usuario => ({ id_usuario }))
@@ -139,6 +139,23 @@ test('evento_reprogramado solo acepta publicado y notifica con la nueva fecha y 
     assert.equal(creadas[0].datos.hora_evento, '00:00:00');
     assert.match(creadas[0].mensaje, /2026-12-13 a las 00:00:00/);
     assert.equal(creadas.at(-1).id_usuario, 'staff-001');
+});
+
+test('evento_reprogramado acepta reprogramado y notifica con la nueva fecha y hora', async () => {
+    const creadas = prepararNotificaciones({
+        usuarios: [{ id_usuario: 'user-1' }]
+    });
+
+    await handler.manejarEventoReprogramado({
+        id_evento: 'evt-001',
+        id_usuario: 'staff-001',
+        nuevo_estado: 'reprogramado',
+        fecha_cambio: '2026-12-13',
+        hora_cambio: '00:00:00'
+    });
+
+    assert.equal(creadas[0].datos.nuevo_estado, 'reprogramado');
+    assert.match(creadas[0].mensaje, /2026-12-13 a las 00:00:00/);
 });
 
 test('evento_reprogramado verifica la actualización y reemplaza recordatorios activos', async () => {
@@ -280,7 +297,7 @@ test('rechaza estados incompatibles con el tipo de evento y fechas de reprograma
             fecha_cambio: '2026-09-13',
             hora_cambio: '00:00:00'
         }),
-        /evento_reprogramado debe ser publicado/
+        /evento_reprogramado debe ser publicado o reprogramado/
     );
     await assert.rejects(
         handler.manejarEventoReprogramado({

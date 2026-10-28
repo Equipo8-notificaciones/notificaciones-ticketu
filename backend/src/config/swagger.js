@@ -3,8 +3,7 @@ const { PORT } = require('./env');
 
 const TIPOS = [
     'COMPRA', 'RECORDATORIO', 'RECORDATORIO_24H', 'RECORDATORIO_30M',
-    'INICIO_EVENTO', 'EVENTO_CAMBIO', 'CAMBIO_EVENTO', 'CANCELACION_EVENTO',
-    'RECUPERACION_PASSWORD', 'CREACION_STAFF'
+    'INICIO_EVENTO', 'EVENTO_CAMBIO', 'CAMBIO_EVENTO', 'CANCELACION_EVENTO'
 ];
 
 const options = {
@@ -52,14 +51,22 @@ const options = {
                         detalle: { type: 'string' }
                     }
                 },
-                AuthResultadoNotificacion: {
+                AuthResultadoCorreo: {
                     type: 'object',
                     description: 'Resultado publicado por Notificaciones en notificaciones.events con routing key correo_auth.',
                     required: ['email_destino', 'estado_envio'],
                     properties: {
                         email_destino: { type: 'string', format: 'email', example: 'usuario@ejemplo.com' },
                         estado_envio: { type: 'string', enum: ['exitoso', 'error'] },
-                        Error_envio: { type: 'string' }
+                        error_envio: { type: 'string' }
+                    }
+                },
+                EntradasConfirmacionEnvio: {
+                    type: 'object',
+                    description: 'Confirmación publicada por Notificaciones en notificaciones.events con routing key notificaciones.confirmacion_envio cuando se recibe entradas_emitidas.',
+                    required: ['estado'],
+                    properties: {
+                        estado: { type: 'string', enum: ['en_cola'], example: 'en_cola' }
                     }
                 },
                 PanelResultadoNotificacion: {
