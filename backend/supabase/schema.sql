@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.notificacion (
     CONSTRAINT check_notificacion_tipo
         CHECK (tipo IN (
             'COMPRA', 'RECORDATORIO', 'RECORDATORIO_24H', 'RECORDATORIO_30M',
-            'INICIO_EVENTO', 'EVENTO_CAMBIO', 'CAMBIO_EVENTO', 'CANCELACION_EVENTO',
+            'INICIO_EVENTO', 'CAMBIO_EVENTO', 'CANCELACION_EVENTO',
             'RECUPERACION_PASSWORD', 'CREACION_STAFF'
         )),
     CONSTRAINT check_notificacion_estado_lectura

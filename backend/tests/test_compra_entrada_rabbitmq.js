@@ -11,7 +11,7 @@ const amqp = require('amqplib');
 
 const EXCHANGE_ENTRADAS = 'entradas.events';
 const ROUTING_KEY_ENTRADAS = 'entradas_emitidas';
-const EXCHANGE_CONFIRMACION = 'notificaciones.confirmacion_envio';
+const EXCHANGE_CONFIRMACION = 'notificaciones.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
 const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@rabbitmq:5672';
 const NOTIFICACIONES_URL = process.env.NOTIFICACIONES_URL || 'http://notificaciones:3000';
