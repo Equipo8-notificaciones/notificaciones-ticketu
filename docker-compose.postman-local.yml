@@ -1,0 +1,23 @@
+﻿services:
+  notificaciones:
+    environment:
+      AUTH_SERVICE_URL: "http://auth-mock:10000"
+    depends_on:
+      auth-mock:
+        condition: service_started
+    networks:
+      - default
+
+  auth-mock:
+    profiles:
+      - postman-mock-auth
+    build:
+      context: ./postman/mock-auth
+      dockerfile: Dockerfile
+    container_name: notificaciones-auth-mock
+    restart: unless-stopped
+    environment:
+      PORT: "10000"
+      MOCK_AUTH_TOKEN: "postman-test-token"
+    networks:
+      - default

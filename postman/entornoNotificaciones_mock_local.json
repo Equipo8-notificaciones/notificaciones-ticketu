@@ -1,0 +1,45 @@
+{
+  "id": "e56d26a1-64fc-4dcc-8cf2-da589d73d7d0",
+  "name": "entornoNotificaciones (mock local)",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "jwtToken",
+      "value": "postman-test-token",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "notificationIdSecundaria",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "notificationIdIndividual",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "mockAuth",
+      "value": "true (solo pruebas locales)",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-10-29T00:00:00.000Z",
+  "_postman_exported_using": "ChatGPT"
+}

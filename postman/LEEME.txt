@@ -1,0 +1,15 @@
+ARCHIVOS PARA AGREGAR A NOTIFICACIONES
+
+Extrae este ZIP dentro de la carpeta raíz donde se encuentra docker-compose.yml.
+No contiene ni reemplaza el docker-compose.yml principal.
+
+Después, la estructura debe quedar:
+  docker-compose.yml
+  docker-compose.postman-mock-auth.yml
+  mock-auth/Dockerfile
+  mock-auth/server.js
+
+Ejecuta en PowerShell desde esa carpeta:
+  docker compose -f docker-compose.yml -f docker-compose.postman-mock-auth.yml --profile postman-mock-auth up --build -d
+
+Usa solo para pruebas locales; el token postman-test-token es ficticio.
