@@ -7,11 +7,14 @@
 
 ## Estructura
 
-        tests/postman/
+        postman/
             - coleccionNotificaciones.json  (Colección de requests con tests)
             - entornoNotificaciones.json    (Variables de entorno)
+            - mock-auth/                    (Carpeta con credenciales para testear autenticación)
+            - mock-auth/Dockerfile
+            - mock-auth/server.js
             - evidencias/                   (Capturas de la ejecución)
-            - README.md                      (este archivo)
+            - README.md                     (Este Archivo)
 
 ## Cómo importar
 
@@ -95,10 +98,10 @@ Capturas de cada request ejecutado de Postman. Se encuentran en la carpeta `evid
 ### 1. Servicios propios
 
 **1.1 GET /health - Estado del servicio**
-![1.1 GET /health](./evidencias/01-health.png)
+<img width="1223" height="322" alt="image" src="https://github.com/user-attachments/assets/254d1c4d-4391-49e2-95ac-aba450e8dbb0" />
 
 **1.2 POST /api/notificaciones - Crear notificación**
-![1.2 POST crearNotificacion](./evidencias/02-crearNotificacion.png)
+<img width="1225" height="590" alt="image" src="https://github.com/user-attachments/assets/eecc39c7-ef69-4be8-825f-9df5d625390d" />
 
 **1.3 GET /api/notificaciones - Listar notificaciones**
 ![1.3 GET listarNotificacion](./evidencias/03-listarNotificaciones.png)
@@ -110,7 +113,7 @@ Capturas de cada request ejecutado de Postman. Se encuentran en la carpeta `evid
 ![1.5 POST marcarLeida](./evidencias/05-marcarLeida.png)
 
 **1.6 POST /api/notificaciones/marcar-todas-leidas**
-![1.6 POST marcarTodasLeidas](./evidencias/06-marcarTodasLeidas.png)
+<img width="1220" height="482" alt="image" src="https://github.com/user-attachments/assets/801a4a93-4954-45e3-8c2f-872d656c677d" />
 
 Observación: La respuesta es un array vacío `[]` porque en el paso anterior ya se marcó la única notificación como LEIDA, por lo que no había notificaciones marcadas como NO_LEIDA pendientes de actualizar, por lo que el test pasa correctamente verificando Status 200 y tipo array.
 
