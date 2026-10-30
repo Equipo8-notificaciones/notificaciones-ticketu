@@ -7,7 +7,7 @@
     "start": "node app.js",
     "test": "node --test tests/**/*.test.js",
     "check": "node --check app.js",
-    "test:compra": "node tests/entradas/test_compra_entrada_rabbitmq.js",
+    "test:compra": "node tests/entrada/test_compra_entrada_rabbitmq.js",
     "test:auth-integration": "node --test tests/auth/autentificacion/test_notificaciones_con_autentificacion.js"
   },
   "keywords": [
