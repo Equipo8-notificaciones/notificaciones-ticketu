@@ -104,41 +104,42 @@ Capturas de cada request ejecutado de Postman. Se encuentran en la carpeta `evid
 <img width="1225" height="590" alt="image" src="https://github.com/user-attachments/assets/eecc39c7-ef69-4be8-825f-9df5d625390d" />
 
 **1.3 GET /api/notificaciones - Listar notificaciones**
-![1.3 GET listarNotificacion](./evidencias/03-listarNotificaciones.png)
+<img width="1230" height="575" alt="image" src="https://github.com/user-attachments/assets/2227641d-cb58-4ecd-9fec-f99cb599e260" />
 
 **1.4 GET /api/notificaciones/:id - Obtener por ID**
-![1.4 GET obtenerPorId](./evidencias/04-obtenerPorId.png)
+<img width="1226" height="560" alt="image" src="https://github.com/user-attachments/assets/555bd4e1-f396-4de4-828c-cfc993c87b9e" />
 
 **1.5 POST /api/notificaciones/:id/leida - Marcar como leída**
-![1.5 POST marcarLeida](./evidencias/05-marcarLeida.png)
+<img width="1226" height="556" alt="image" src="https://github.com/user-attachments/assets/383de946-d07d-4fbc-a82d-6290e8984903" />
 
 **1.6 POST /api/notificaciones/marcar-todas-leidas**
 <img width="1220" height="482" alt="image" src="https://github.com/user-attachments/assets/801a4a93-4954-45e3-8c2f-872d656c677d" />
 
 Observación: La respuesta es un array vacío `[]` porque en el paso anterior ya se marcó la única notificación como LEIDA, por lo que no había notificaciones marcadas como NO_LEIDA pendientes de actualizar, por lo que el test pasa correctamente verificando Status 200 y tipo array.
 
-**1.7 DELETE /api/notificaciones/:id - Eliminar una**
-![1.7 DELETE eliminarUna](./evidencias/07-eliminarUna.png)
+**1.7 GET /api/notificaciones/:id/envios - consultar historial de envios**
+<img width="1228" height="472" alt="image" src="https://github.com/user-attachments/assets/fb4f8bfe-3c80-46f8-bee4-fb8f49470064" />
 
-**1.8 GET /api-docs/ - Swagger disponible**
-![1.8 GET swagger](./evidencias/08-swagger.png)
+**1.8 DELETE /api/notificaciones/:id - Eliminar una**
+<img width="1217" height="562" alt="image" src="https://github.com/user-attachments/assets/96d03713-b719-48d8-a73b-6b2bc8e08aea" />
 
-### 2. Invocaciones a otros módulos (simulados)
+**1.9 DELETE /api/notificaciones - Eliminar varias (borrado logico)**
+<img width="1227" height="585" alt="image" src="https://github.com/user-attachments/assets/00d480af-6291-4afb-a471-58b6ea6a2986" />
 
-**2.1 Auth - Obtener datos de usuario**
-![2.1 Auth authSimulado](./evidencias/09-authSimulado.png)
+**1.10 GET /api-docs/ - Swagger disponible**
+<img width="1217" height="585" alt="image" src="https://github.com/user-attachments/assets/dd06d92a-038f-4109-8c9a-0756516c9f3e" />
 
-Observación: El request no se envía porque la URL apunta a `localhost:3001` (servicio de otro equipo, que por ahora no está disponible y se usa este host momentáneo).
+**1.11 GET /api/notificaciones/eventos - Alias de Eventos para el Front**
+<img width="1222" height="610" alt="image" src="https://github.com/user-attachments/assets/24e66573-85ff-4088-9d27-3d6a23351096" />
 
-**2.2 Entradas - Obtener datos de evento**
-![2.2 Entradas entradasSimulado](./evidencias/10-entradasSimulado.png)
+**1.12 POST /api/notificaciones - Crear segunda notificacion (para borrado multiple)**
+<img width="1218" height="556" alt="image" src="https://github.com/user-attachments/assets/1fa5108a-e816-4a2b-bc8a-37c511015209" />
 
-Observación: Mismo caso que 2.1. El request apunta a `localhost:3002` (no disponible).
+**1.13 POST /api/notificaciones - Crear tercera notificacion (para borrado individual)**
+<img width="1226" height="562" alt="image" src="https://github.com/user-attachments/assets/81a9065b-688c-4a0e-b458-2e9e785a7d18" />
 
-**2.3 Panel - Estado de evento**
-![2.3 Panel panelSimulado](./evidencias/11-panelSimulado.png)
-
-Observación: Mismo caso que 2.1. El request apunta a `localhost:3003` (no disponible).
+**1.14 POST /api/notificaciones - Sin Cookie de sesion**
+<img width="1223" height="755" alt="image" src="https://github.com/user-attachments/assets/fa5d32fe-ee84-4a12-a7d1-8385df69751c" />
 
 ## Distribución de tests por request
 
