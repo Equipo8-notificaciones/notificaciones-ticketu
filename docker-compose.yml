@@ -10,6 +10,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-ticketu}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-ticketu_dev}
+      RABBITMQ_DEFAULT_VHOST: ticketu
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -32,8 +33,8 @@ services:
     environment:
       PORT: "3000"
       BROKER_MODE: rabbitmq
-      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres.aiobavotskgvqnspdjrj:Ticketu-notificaciones@aws-0-us-east-2.pooler.supabase.com:5432/postgres}
+      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672/ticketu
+      DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el archivo .env con la conexión de Supabase}
       DB_SSL: ${DB_SSL:-true}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -47,7 +48,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -70,14 +71,16 @@ services:
   # Se ejecuta solo con: docker compose --profile test run --rm test-compra-entrada
   test-compra-entrada:
     profiles: ["test"]
+    env_file:
+      - .env
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672
+      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672/ticketu
       NOTIFICACIONES_URL: http://notificaciones:3000
-      TEST_TIMEOUT_MS: "30000"
-    command: ["node", "tests/test_compra_entrada_rabbitmq.js"]
+      TEST_TIMEOUT_MS: "45000"
+    command: ["node", "tests/entrada/test_compra_entrada_rabbitmq.js"]
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -85,7 +88,26 @@ services:
         condition: service_healthy
     restart: "no"
 
-  
+
+  # Se ejecuta con: docker compose --profile test run --rm test-panel-evento
+  test-panel-evento:
+    profiles: ["test"]
+    env_file:
+      - .env
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      BROKER_URL: amqp://${RABBITMQ_USER:-ticketu}:${RABBITMQ_PASSWORD:-ticketu_dev}@rabbitmq:5672/ticketu
+      TEST_TIMEOUT_MS: "45000"
+    command: ["node", "tests/panel/test_panel_evento_rabbitmq.js"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      notificaciones:
+        condition: service_healthy
+    restart: "no"
+
 
 volumes:
   rabbitmq_data:

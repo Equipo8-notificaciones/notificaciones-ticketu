@@ -29,36 +29,41 @@ async function manejarEntradaEmitida(evento) {
         ? evento.fecha_evento
         : `${evento.fecha_evento}T${horaEvento}:00`;
 
-    try {
-        const resultadoBD = await pool.query(
-            `INSERT INTO public.entradas_usuario
-                (id_usuario, id_evento, correo_comprador, nombre_evento, fecha_evento)
-            VALUES ($1, $2, $3, $4, $5::timestamptz)
-            ON CONFLICT (id_usuario, id_evento) DO UPDATE SET
-                correo_comprador = EXCLUDED.correo_comprador,
-                nombre_evento = EXCLUDED.nombre_evento,
-                fecha_evento = EXCLUDED.fecha_evento,
-                updated_at = NOW()`,
-            [
-                String(idUsuario),
-                String(idEvento),
-                correoComprador,
-                nombreEvento,
-                fechaPersistir
-            ]
-        );
+    if (!pool && process.env.NODE_ENV !== 'test') {
+        throw new Error('Supabase no está disponible; no se puede registrar la compra.');
+    }
+    if (pool) {
+        try {
+            const resultadoBD = await pool.query(
+                `INSERT INTO public.entradas_usuario
+                    (id_usuario, id_evento, correo_comprador, nombre_evento, fecha_evento)
+                VALUES ($1, $2, $3, $4, $5::timestamptz)
+                ON CONFLICT (id_usuario, id_evento) DO UPDATE SET
+                    correo_comprador = EXCLUDED.correo_comprador,
+                    nombre_evento = EXCLUDED.nombre_evento,
+                    fecha_evento = EXCLUDED.fecha_evento,
+                    updated_at = NOW()`,
+                [
+                    String(idUsuario),
+                    String(idEvento),
+                    correoComprador,
+                    nombreEvento,
+                    fechaPersistir
+                ]
+            );
 
-        console.log(
-            '[entradaEmitidaHandler] Compra guardada en Supabase:',
-            { id_usuario: String(idUsuario), id_evento: String(idEvento),
-            filas_afectadas: resultadoBD.rowCount }
-        );
-    } catch (error) {
-        console.error(
-            '[entradaEmitidaHandler] Error al guardar compra en Supabase:',
-            error.message
-        );
-        throw error;
+            console.log(
+                '[entradaEmitidaHandler] Compra guardada en Supabase:',
+                { id_usuario: String(idUsuario), id_evento: String(idEvento),
+                filas_afectadas: resultadoBD.rowCount }
+            );
+        } catch (error) {
+            console.error(
+                '[entradaEmitidaHandler] Error al guardar compra en Supabase:',
+                error.message
+            );
+            throw error;
+        }
     }
 
     const datos = { ...evento };
@@ -131,10 +136,7 @@ async function manejarEntradaEmitida(evento) {
 }
 
 async function publicarConfirmacion() {
-    const payload = {
-        estado: 'enviado',
-        mensaje: 'Notificaciones procesadas correctamente.'
-    };
+    const payload = { estado: 'en_cola' };
 
     if (typeof broker.publishToExchange !== 'function') {
         throw new Error('El broker debe permitir publicar confirmaciones en un exchange específico.');

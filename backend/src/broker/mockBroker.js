@@ -6,10 +6,8 @@ class MockBroker {
         this.emitter.setMaxListeners(50);
     }
 
-    async publish(topic, payload) {
-        console.log(`[mockBroker] publish -> ${topic}`, payload);
-        this.emitter.emit(topic, payload);
-        return { publicado: true, topic };
+    async publish(exchange, topic, payload) {
+        return this.publishToExchange(exchange, topic, payload);
     }
 
     async publishToExchange(exchange, topic, payload) {
@@ -19,12 +17,8 @@ class MockBroker {
         return { publicado: true, exchange, topic };
     }
 
-    subscribe(topic, handler) {
-        console.log(`[mockBroker] suscrito a -> ${topic}`);
-        this.emitter.on(topic, async payload => {
-            try { await handler(payload); }
-            catch (error) { console.error(`[mockBroker] error procesando "${topic}":`, error.message); }
-        });
+    subscribe(exchange, topic, handler) {
+        this.subscribeToExchange(exchange, topic, handler);
     }
 
     subscribeToExchange(exchange, topic, handler) {

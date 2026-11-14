@@ -196,7 +196,7 @@ test('evento_reprogramado verifica la actualización y reemplaza recordatorios a
         { id_usuario: 'user-1', fecha_evento: '2026-12-13', hora_evento: '00:00:00' },
         { id_usuario: 'user-2', fecha_evento: '2026-12-13', hora_evento: '00:00:00' }
     ]);
-    assert.equal(creadas.filter(n => n.tipo === 'EVENTO_CAMBIO').length, 3);
+    assert.equal(creadas.filter(n => n.tipo === 'CAMBIO_EVENTO').length, 3);
 });
 
 test('no envía notificaciones si falla la actualización de fecha en la base de datos', async () => {
