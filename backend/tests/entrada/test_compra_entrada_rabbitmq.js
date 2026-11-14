@@ -7,7 +7,7 @@ const EXCHANGE_ENTRADAS = 'entradas.events';
 const ROUTING_KEY_ENTRADAS = 'entradas_emitidas';
 const EXCHANGE_CONFIRMACION = 'notificaciones.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
-const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@localhost:5672';
+const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@localhost:5672/ticketu';
 const DATABASE_URL = process.env.DATABASE_URL;
 const TIMEOUT_MS = Number(process.env.TEST_TIMEOUT_MS || 45000);
 

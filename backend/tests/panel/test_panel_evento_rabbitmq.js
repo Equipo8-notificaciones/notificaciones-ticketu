@@ -5,7 +5,7 @@ const amqp = require('amqplib');
 const { Pool } = require('pg');
 
 const EXCHANGE_PANEL = 'panel.evento.notificaciones.v1';
-const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@localhost:5672';
+const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@localhost:5672/ticketu';
 const DATABASE_URL = process.env.DATABASE_URL;
 const TIMEOUT_MS = Number(process.env.TEST_TIMEOUT_MS || 45000);
 
