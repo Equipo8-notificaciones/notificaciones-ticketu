@@ -100,7 +100,7 @@ async function procesarEventoPanel({
         try {
             const notificacion = await notificacionService.crearNotificacion({
                 id_usuario: idDestinatario,
-                tipo: 'EVENTO_CAMBIO',
+                tipo: reprogramado ? 'CAMBIO_EVENTO' : 'CANCELACION_EVENTO',
                 canal: 'APP',
                 mensaje: crearMensaje({
                     idEvento,
@@ -198,9 +198,11 @@ async function notificarOrganizador(idUsuario, resultado) {
     try {
         const notificacion = await notificacionService.crearNotificacion({
             id_usuario: idUsuario,
-            tipo: 'EVENTO_CAMBIO',
+            tipo: 'CAMBIO_EVENTO',
             canal: 'APP',
-            mensaje,
+            mensaje: resultado.nuevo_estado === 'exito'
+                ? `El envío se realizó correctamente. ${mensaje}`
+                : `El envío no se completó correctamente. ${mensaje}`,
             datos: resultado
         });
         await notificacionService.enviarConReintentos(

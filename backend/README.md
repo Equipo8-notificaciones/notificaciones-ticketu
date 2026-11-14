@@ -634,3 +634,85 @@ Broker:
 Red común:
   plataforma-eventos-net
 ```
+
+
+---
+
+# Integración del microservicio Notificaciones
+
+## Base de datos Supabase (PostgreSQL)
+
+El backend utiliza PostgreSQL de Supabase mediante `pg` y `DATABASE_URL`. No se configura PostgreSQL local ni se utiliza almacenamiento en memoria como alternativa cuando falta la conexión: las operaciones que requieren persistencia fallan si `DATABASE_URL` no está definida.
+
+1. En Supabase, abre **Project Settings → Database → Connection string → URI**.
+2. Copia la URI del *Session pooler* (puerto `5432`) y reemplaza `[DB_PASSWORD]`.
+3. Copia el archivo `.env.example` de la raíz como `.env` y configura `DATABASE_URL`, `DB_SSL=true` y las credenciales SMTP reales.
+4. En el SQL Editor de Supabase, ejecuta el contenido completo de `backend/supabase/schema.sql`.
+Si Supabase ya contiene una versión anterior de las tablas, revisa primero `backend/supabase/migracion-schema-anterior.sql` y ejecútala solo si corresponde a esa estructura antigua. No ejecutes esa migración sobre una base vacía.
+
+5. Levanta el proyecto con `docker compose up --build -d`.
+6. Comprueba `http://localhost:3001/ready`. Debe responder `200` e indicar `base_datos: "conectada"`.
+
+No publiques ni subas `.env` a Git. No se incluyen contraseñas reales en los archivos de ejemplo.
+
+## Pruebas de integración
+
+Las pruebas de compra y Panel publican eventos reales en RabbitMQ y consultan las tablas de Supabase para verificar los efectos persistidos.
+
+### Autenticación (Auth real)
+
+Con Auth escuchando en `localhost:10000` y Notificaciones en `localhost:3001`, desde `backend/`:
+
+```bash
+npm run test:integration:auth
+```
+
+La prueba registra un usuario temporal en Auth, inicia sesión, comprueba que Auth emite `jwt_token`, valida que Notificaciones rechaza cookies ausentes/incorrectas y verifica que acepta la sesión real y consulta el centro del usuario.
+
+Para ejecutar el test desde Windows/PowerShell contra servicios publicados en el host, antes de lanzarlo define:
+
+```powershell
+$env:AUTH_SERVICE_URL='http://localhost:10000'
+$env:NOTIFICACIONES_URL='http://localhost:3001'
+npm run test:integration:auth
+```
+
+El valor `AUTH_SERVICE_URL=http://auth-service:10000` del `.env.example` está pensado para comunicación entre contenedores; desde el host se debe usar `localhost` o el hostname real del servicio.
+
+**Punto a confirmar con el equipo Auth:** el contrato adjunto describe `GET /internal/validar-sesion` y una cookie `jwt`, mientras que el backend actual y las pruebas existentes usan `GET /api/auth/validar-sesion` y `jwt_token`. Se conserva la ruta/cookie que utiliza la implementación actual para no romper la integración existente; ambos equipos deben confirmar cuál es la versión contractual definitiva.
+
+### Compra de entrada (Entradas → Notificaciones)
+
+Con los contenedores `rabbitmq` y `notificaciones` levantados y `.env` configurado:
+
+```bash
+docker compose --profile test run --rm test-compra-entrada
+```
+
+Publica `entradas_emitidas` en `entradas.events`, espera la confirmación `en_cola` en `notificaciones.events` y verifica en Supabase:
+- La fila de `entradas_usuario`.
+- Las notificaciones `APP` y `EMAIL`.
+- Los intentos de envío relacionados en `envios_notificacion`.
+
+Puedes configurar `TEST_EMAIL_DESTINO` con un buzón de pruebas. La prueba comprueba el registro de intentos, no garantiza que el proveedor SMTP acepte o entregue el correo.
+
+### Cambio/cancelación de evento (Panel → Notificaciones)
+
+```bash
+docker compose --profile test run --rm test-panel-evento
+```
+
+La prueba inserta entradas de prueba para dos escenarios: `evento_actualizado` con estado `cancelado` y `evento_reprogramado` con fecha/hora nuevas, ambos publicados en `panel.evento.notificaciones.v1`. Comprueba en Supabase que:
+- Se notifica a los dos usuarios con entradas activas.
+- No se notifica al usuario con entrada inactiva.
+- El evento cancelado queda con estado `CANCELADO`.
+- La nueva fecha y hora de la reprogramación quedan persistidas.
+- El organizador recibe la confirmación contractual «El envío se realizó correctamente» en ambos escenarios.
+- Los intentos quedan registrados en `envios_notificacion`.
+
+Las pruebas de integración crean registros temporales identificados con IDs únicos. No eliminan los registros de prueba para conservar evidencia de lo ejecutado.
+
+### Salud del servicio
+
+- `GET /health`: proceso HTTP activo.
+- `GET /ready`: servicio listo y conexión real a Supabase comprobada.

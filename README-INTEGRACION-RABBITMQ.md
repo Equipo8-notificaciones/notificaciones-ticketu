@@ -1,3 +1,7 @@
+# Integración RabbitMQ y Supabase de Notificaciones
+
+La configuración de base de datos y las pruebas integrales actualizadas están documentadas en `backend/README.md`. Antes de levantar el backend, configura `DATABASE_URL` en `.env` y ejecuta `backend/supabase/schema.sql` en Supabase. La prueba de compra valida también `entradas_usuario`, `notificacion` y `envios_notificacion`; la prueba de Panel valida destinatarios activos, confirmación al organizador y persistencia.
+
 # TicketU — Notificaciones, RabbitMQ y Docker
 
 Este proyecto contiene el frontend, el backend de Notificaciones y RabbitMQ. La carpeta `backend/tests` incorpora una prueba que simula el evento de compra que Entradas debe enviar. El ZIP de Entradas se utiliza solo como referencia: no se modifica ni se copia a este proyecto.

@@ -24,6 +24,20 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/health', (req, res) => {
     res.json({ servicio: 'notificaciones', estado: 'OK' });
 });
+
+app.get('/ready', async (req, res) => {
+    try {
+        await require('./src/config/database').getPool().query('SELECT 1');
+        res.json({ servicio: 'notificaciones', estado: 'READY', base_datos: 'conectada' });
+    } catch (error) {
+        res.status(503).json({
+            servicio: 'notificaciones',
+            estado: 'NOT_READY',
+            base_datos: 'no_disponible',
+            error: error.message
+        });
+    }
+});
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/notificaciones', notificacionRoutes);
 app.use(errorHandler);

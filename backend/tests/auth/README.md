@@ -1,31 +1,22 @@
-# Test automático: autenticación y notificaciones
+# Integración real Auth ↔ Notificaciones
 
-Este test prepara y ejecuta por sí solo el flujo local de Auth y Notificaciones:
+Este test no levanta una base de datos local ni inicia servicios con configuración artificial. Verifica los servicios que ya están ejecutándose y que Notificaciones utiliza la conexión Supabase configurada.
 
-- Inicia PostgreSQL de Auth con Docker Compose y espera a que esté listo.
-- Genera las llaves RSA locales de Auth solo si todavía no existe ninguna.
-- Prepara Prisma y compila Auth.
-- Inicia Auth en `http://localhost:10000` y Notificaciones en `http://localhost:3001` cuando no están activos.
-- Registra un usuario de prueba, inicia sesión, valida `jwt_token` y comprueba el centro protegido de Notificaciones.
-- Cierra al terminar los servicios y la base que haya iniciado el propio test. No detiene servicios que ya estaban activos.
+## Requisitos
+
+- Auth activo en `http://localhost:10000`.
+- Notificaciones activo en `http://localhost:3001`.
+- Supabase configurado en `.env` y `GET /ready` respondiendo HTTP 200.
+- Dependencias del backend instaladas (`npm ci`).
 
 ## Ejecutar
 
-1. Inicia Docker Desktop.
-2. Abre una terminal PowerShell.
-3. Copia y pega:
+Desde la carpeta `backend/`:
 
-```powershell
-Set-Location "C:\Users\gherr\Downloads\Notificaciones-Ticketu\notificaciones\backend"
+```bash
 npm run test:auth-integration
 ```
 
-El test genera las credenciales automáticamente y no imprime la contraseña. Requiere Docker Compose, Node.js y npm. Si faltan las dependencias de Auth o Notificaciones, el test ejecuta `npm install` en el proyecto correspondiente.
+La prueba registra un usuario temporal mediante Auth, inicia sesión, verifica la cookie `jwt_token`, comprueba que Notificaciones rechaza una sesión ausente y una inválida, y finalmente confirma que Notificaciones acepta la cookie válida y consulta el centro del usuario.
 
-El resultado esperado es `pass 1` y:
-
-```text
-Correcto: registro, login, cookie, validación y centro vacío ([]).
-```
-
-El test registra un usuario nuevo en la base de Auth en cada ejecución y no lo elimina. Las llaves RSA locales también se conservan. Si ya existe solo una de las dos llaves, el test se detiene sin sobrescribirla.
+Si los servicios usan otras URL, configura `AUTH_SERVICE_URL` y `NOTIFICACIONES_URL`. No se modifica ni inicia el frontend.
