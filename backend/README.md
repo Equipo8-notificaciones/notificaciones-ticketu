@@ -689,7 +689,7 @@ Con los contenedores `rabbitmq` y `notificaciones` levantados y `.env` configura
 docker compose --profile test run --rm test-compra-entrada
 ```
 
-Publica `entradas_emitidas` en `entradas.events`, espera la confirmación `en_cola` en `notificaciones.events` y verifica en Supabase:
+Publica `entradas_emitidas` en `ticketu.events`, espera la confirmación `en_cola` en `ticketu.events` y verifica en Supabase:
 - La fila de `entradas_usuario`.
 - Las notificaciones `APP` y `EMAIL`.
 - Los intentos de envío relacionados en `envios_notificacion`.
@@ -702,7 +702,7 @@ Puedes configurar `TEST_EMAIL_DESTINO` con un buzón de pruebas. La prueba compr
 docker compose --profile test run --rm test-panel-evento
 ```
 
-La prueba inserta entradas de prueba para dos escenarios: `evento_actualizado` con estado `cancelado` y `evento_reprogramado` con fecha/hora nuevas, ambos publicados en `panel.evento.notificaciones.v1`. Comprueba en Supabase que:
+La prueba inserta entradas de prueba para dos escenarios: `evento_actualizado` con estado `cancelado` y `evento_reprogramado` con fecha/hora nuevas, ambos publicados en `ticketu.events`. Comprueba en Supabase que:
 - Se notifica a los dos usuarios con entradas activas.
 - No se notifica al usuario con entrada inactiva.
 - El evento cancelado queda con estado `CANCELADO`.

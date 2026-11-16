@@ -5,7 +5,7 @@ const broker = require('../broker');
 const { planificarRecordatorio } = require('../jobs/notificacionJobs');
 const { programarRecordatorioEvento } = require('../services/recordatorioEventoService');
 
-const EXCHANGE_CONFIRMACION = 'notificaciones.events';
+const EXCHANGE_CONFIRMACION = 'ticketu.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
 
 // Procesa la compra recibida desde Entradas/RabbitMQ.

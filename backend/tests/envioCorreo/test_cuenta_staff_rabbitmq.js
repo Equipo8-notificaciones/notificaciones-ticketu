@@ -11,8 +11,8 @@ const TOKEN_PRUEBA = `test-cuenta-staff-${Date.now()}`;
 async function main() {
     const { connection, channel } = await abrirCanal();
     try {
-        const confirmacion = esperarMensaje(channel, 'notificaciones.events', 'correo_auth');
-        await publicar(channel, 'auth.events', 'cuenta_staff', {
+        const confirmacion = esperarMensaje(channel, 'ticketu.events', 'correo_auth');
+        await publicar(channel, 'ticketu.events', 'cuenta_staff', {
             email_destino: EMAIL,
             url: `https://ticketu.cl/restablecer?token=${TOKEN_PRUEBA}`
         });

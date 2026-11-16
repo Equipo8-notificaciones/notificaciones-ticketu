@@ -35,7 +35,7 @@ test('recuperacion_cuenta publica email_destino y error_envio solo ante error', 
         assert.equal(correoEnviado.destino, 'a@gmail.com');
         assert.match(correoEnviado.cuerpo, new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
         assert.equal(publicaciones.length, 1);
-        assert.deepEqual(publicaciones[0].slice(0, 2), ['notificaciones.events', 'correo_auth']);
+        assert.deepEqual(publicaciones[0].slice(0, 2), ['ticketu.events', 'correo_auth']);
         assert.equal(publicaciones[0][2].email_destino, 'a@gmail.com');
         assert.equal(publicaciones[0][2].estado_envio, 'error');
         assert.match(publicaciones[0][2].error_envio, /Falló el envío después de 3 intentos/);

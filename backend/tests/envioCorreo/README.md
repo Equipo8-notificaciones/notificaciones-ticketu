@@ -25,12 +25,6 @@ docker compose exec -T notificaciones node tests/envioCorreo/test_cuenta_staff_r
 docker compose exec -T notificaciones node tests/envioCorreo/test_entradas_emitidas_rabbitmq.js
 ```
 
-Para ejecutar las tres:
-
-```powershell
-docker compose exec -T notificaciones sh -c "node tests/envioCorreo/test_recuperacion_cuenta_rabbitmq.js && node tests/envioCorreo/test_cuenta_staff_rabbitmq.js && node tests/envioCorreo/test_entradas_emitidas_rabbitmq.js"
-```
-
 ## Resultado esperado
 
 Debe aparecer `OK` en cada prueba. Revisa también Spam/Promociones.

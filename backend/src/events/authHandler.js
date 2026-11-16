@@ -1,7 +1,7 @@
 const emailService = require('../services/emailService');
 const broker = require('../broker');
 
-const EXCHANGE_NOTIFICACIONES = 'notificaciones.events';
+const EXCHANGE_NOTIFICACIONES = 'ticketu.events';
 const CONFIG_RECUPERACION_CUENTA = {
     routingKey: 'recuperacion_cuenta',
     asunto: 'Restablecer contraseña',
