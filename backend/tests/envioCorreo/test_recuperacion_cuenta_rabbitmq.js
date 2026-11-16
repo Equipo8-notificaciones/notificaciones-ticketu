@@ -11,8 +11,8 @@ const ID_USUARIO = `usuario-recuperacion-${Date.now()}`;
 async function main() {
     const { connection, channel } = await abrirCanal();
     try {
-        const confirmacion = esperarMensaje(channel, 'ticketu.events', 'correo_auth');
-        await publicar(channel, 'ticketu.events', 'recuperacion_cuenta', {
+        const confirmacion = esperarMensaje(channel, 'notificaciones.events', 'correo_auth');
+        await publicar(channel, 'auth.events', 'recuperacion_cuenta', {
             id_usuario: ID_USUARIO,
             email_destino: EMAIL,
             url: 'https://ticketu.cl/restablecer?token=test-recuperacion'

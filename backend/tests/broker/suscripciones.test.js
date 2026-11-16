@@ -19,7 +19,7 @@ test('suscripciones deduplican eventos sin cambiar el payload recibido ni exigir
         let recibido;
 
         let ejecuciones = 0;
-        await suscribirEvento('ticketu.events', 'recuperacion_cuenta', async payload => {
+        await suscribirEvento('auth.events', 'recuperacion_cuenta', async payload => {
             ejecuciones++;
             recibido = payload;
         });
@@ -45,11 +45,11 @@ test('deduplica los routing keys suscritos de Entradas, AUTH y Panel', async () 
         assert.deepEqual(
             suscripciones.map(({ exchange, routingKey }) => [exchange, routingKey]),
             [
-                ['ticketu.events', 'entradas_emitidas'],
-                ['ticketu.events', 'recuperacion_cuenta'],
-                ['ticketu.events', 'cuenta_staff'],
-                ['ticketu.events', 'evento_actualizado'],
-                ['ticketu.events', 'evento_reprogramado']
+                ['entradas.events', 'entradas_emitidas'],
+                ['auth.events', 'recuperacion_cuenta'],
+                ['auth.events', 'cuenta_staff'],
+                ['panel.events', 'evento_actualizado'],
+                ['panel.events', 'evento_reprogramado']
             ]
         );
         for (const suscripcion of suscripciones) {

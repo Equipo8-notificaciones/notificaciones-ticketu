@@ -52,7 +52,7 @@ test('compra crea notificaciones APP y EMAIL y programa recordatorio', async () 
     assert.equal(resultado.notificacion_email.canal, 'EMAIL');
     assert.deepEqual(confirmaciones.map(confirmacion => confirmacion.payload.estado), ['en_cola']);
     assert.ok(confirmaciones.every(confirmacion =>
-        confirmacion.exchange === 'ticketu.events' &&
+        confirmacion.exchange === 'notificaciones.events' &&
         confirmacion.topic === 'notificaciones.confirmacion_envio' &&
         Object.keys(confirmacion.payload).length === 1 &&
         Object.hasOwn(confirmacion.payload, 'estado')

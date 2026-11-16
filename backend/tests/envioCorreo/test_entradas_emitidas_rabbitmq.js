@@ -24,10 +24,10 @@ async function main() {
     try {
         const confirmacion = esperarMensaje(
             channel,
-            'ticketu.events',
+            'notificaciones.events',
             'notificaciones.confirmacion_envio'
         );
-        await publicar(channel, 'ticketu.events', 'entradas_emitidas', {
+        await publicar(channel, 'entradas.events', 'entradas_emitidas', {
             correo_comprador: EMAIL,
             nombre_comprador: 'Comprador de Prueba',
             id_usuario: idUsuario,

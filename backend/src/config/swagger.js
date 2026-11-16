@@ -53,7 +53,7 @@ const options = {
                 },
                 AuthResultadoCorreo: {
                     type: 'object',
-                    description: 'Resultado publicado por Notificaciones en ticketu.events con routing key correo_auth.',
+                    description: 'Resultado publicado por Notificaciones en notificaciones.events con routing key correo_auth.',
                     required: ['email_destino', 'estado_envio'],
                     properties: {
                         email_destino: { type: 'string', format: 'email', example: 'usuario@ejemplo.com' },
@@ -63,7 +63,7 @@ const options = {
                 },
                 EntradasConfirmacionEnvio: {
                     type: 'object',
-                    description: 'Confirmación publicada por Notificaciones en ticketu.events con routing key notificaciones.confirmacion_envio cuando se recibe entradas_emitidas.',
+                    description: 'Confirmación publicada por Notificaciones en notificaciones.events con routing key notificaciones.confirmacion_envio cuando se recibe entradas_emitidas.',
                     required: ['estado'],
                     properties: {
                         estado: { type: 'string', enum: ['en_cola'], example: 'en_cola' }

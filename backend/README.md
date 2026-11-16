@@ -403,10 +403,13 @@ Lo mismo aplica para Auth, Entradas, Pagos, Check-in, Reseñas, Organizador, Not
 
 Todos los grupos que necesiten eventos usan **el mismo RabbitMQ**. No se crea un RabbitMQ por microservicio.
 
-Se usa un exchange compartido de tipo `topic`:
+RabbitMQ puede ser compartido, pero cada contrato de eventos usa su exchange `topic`:
 
 ```text
-ticketu.events
+Entradas → Notificaciones: entradas.events
+Auth → Notificaciones: auth.events
+Panel → Notificaciones: panel.events
+Notificaciones → servicios: notificaciones.events
 ```
 
 Los nombres de evento funcionan como routing keys, por ejemplo:
@@ -525,7 +528,7 @@ Dentro de la red Docker **no se usa `localhost` para RabbitMQ**. Se usa el nombr
 
 ```env
 BROKER_URL=amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu
-EVENT_EXCHANGE=ticketu.events
+RABBITMQ_AUTH_EXCHANGE=auth.events
 ```
 
 `localhost` dentro de un contenedor significa "este mismo contenedor", no RabbitMQ.
@@ -603,7 +606,7 @@ Antes de decir que un módulo está integrado, revisa:
 - Sus endpoints empiezan por `/api/<su-modulo>/...`.
 - El Gateway tiene definida la variable `*_SERVICE_URL` correspondiente.
 - La llamada funciona pasando por `http://localhost:8080`, no solo llamando directo al microservicio.
-- Si publica/consume eventos, usa `ticketu.events` y una cola propia para el consumidor.
+- Si publica/consume eventos, usa el exchange definido por el contrato y una cola propia para el consumidor.
 - No se hardcodean URLs de otros microservicios en el front.
 
 ---
@@ -629,7 +632,7 @@ Gateway:
 
 Broker:
   host Docker: ticketu-rabbitmq:5672
-  exchange: ticketu.events
+  exchanges: entradas.events, auth.events, panel.events, notificaciones.events
 
 Red común:
   plataforma-eventos-net
@@ -646,12 +649,13 @@ El backend utiliza PostgreSQL de Supabase mediante `pg` y `DATABASE_URL`. No se 
 
 1. En Supabase, abre **Project Settings → Database → Connection string → URI**.
 2. Copia la URI del *Session pooler* (puerto `5432`) y reemplaza `[DB_PASSWORD]`.
-3. Copia el archivo `.env.example` de la raíz como `.env` y configura `DATABASE_URL`, `DB_SSL=true` y las credenciales SMTP reales.
+3. Configura `DATABASE_URL`, `DB_SSL=true` y las credenciales SMTP reales en variables de entorno o en `.env` en la raíz.
 4. En el SQL Editor de Supabase, ejecuta el contenido completo de `backend/supabase/schema.sql`.
 Si Supabase ya contiene una versión anterior de las tablas, revisa primero `backend/supabase/migracion-schema-anterior.sql` y ejecútala solo si corresponde a esa estructura antigua. No ejecutes esa migración sobre una base vacía.
 
-5. Levanta el proyecto con `docker compose up --build -d`.
-6. Comprueba `http://localhost:3001/ready`. Debe responder `200` e indicar `base_datos: "conectada"`.
+5. Asegúrate de que el RabbitMQ compartido `ticketu-rabbitmq` y la red Docker externa `plataforma-eventos-net` están disponibles.
+6. Levanta Notificaciones con `docker compose up --build -d`.
+7. Comprueba `http://localhost:3001/ready`. Debe responder `200` e indicar `base_datos: "conectada"`.
 
 No publiques ni subas `.env` a Git. No se incluyen contraseñas reales en los archivos de ejemplo.
 
@@ -683,13 +687,13 @@ El valor `AUTH_SERVICE_URL=http://auth-service:10000` del `.env.example` está p
 
 ### Compra de entrada (Entradas → Notificaciones)
 
-Con los contenedores `rabbitmq` y `notificaciones` levantados y `.env` configurado:
+Con el contenedor `notificaciones` levantado, el RabbitMQ compartido disponible y `DATABASE_URL` configurada:
 
 ```bash
 docker compose --profile test run --rm test-compra-entrada
 ```
 
-Publica `entradas_emitidas` en `ticketu.events`, espera la confirmación `en_cola` en `ticketu.events` y verifica en Supabase:
+Publica `entradas_emitidas` en `entradas.events`, espera la confirmación `en_cola` en `notificaciones.events` y verifica en Supabase:
 - La fila de `entradas_usuario`.
 - Las notificaciones `APP` y `EMAIL`.
 - Los intentos de envío relacionados en `envios_notificacion`.
@@ -702,7 +706,7 @@ Puedes configurar `TEST_EMAIL_DESTINO` con un buzón de pruebas. La prueba compr
 docker compose --profile test run --rm test-panel-evento
 ```
 
-La prueba inserta entradas de prueba para dos escenarios: `evento_actualizado` con estado `cancelado` y `evento_reprogramado` con fecha/hora nuevas, ambos publicados en `ticketu.events`. Comprueba en Supabase que:
+La prueba inserta entradas de prueba para dos escenarios: `evento_actualizado` con estado `cancelado` y `evento_reprogramado` con fecha/hora nuevas, ambos publicados en `panel.events`. Comprueba en Supabase que:
 - Se notifica a los dos usuarios con entradas activas.
 - No se notifica al usuario con entrada inactiva.
 - El evento cancelado queda con estado `CANCELADO`.

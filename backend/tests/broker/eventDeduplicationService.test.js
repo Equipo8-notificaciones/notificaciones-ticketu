@@ -11,10 +11,10 @@ test('deduplica payloads iguales sin requerir event_id', async () => {
     };
 
     const primera = await deduplicador.procesarUnaVez(
-        'ticketu.events', 'entradas_emitidas', { id_usuario: 'usr-1', id_evento: 'evt-1' }, handler
+        'entradas.events', 'entradas_emitidas', { id_usuario: 'usr-1', id_evento: 'evt-1' }, handler
     );
     const segunda = await deduplicador.procesarUnaVez(
-        'ticketu.events', 'entradas_emitidas', { id_evento: 'evt-1', id_usuario: 'usr-1' }, handler
+        'entradas.events', 'entradas_emitidas', { id_evento: 'evt-1', id_usuario: 'usr-1' }, handler
     );
 
     assert.deepEqual(primera, { duplicado: false, resultado: 'procesado' });
@@ -27,13 +27,13 @@ test('payloads diferentes se procesan aunque compartan el mismo evento de negoci
     let ejecuciones = 0;
 
     await deduplicador.procesarUnaVez(
-        'ticketu.events',
+        'panel.events',
         'evento_actualizado',
         { id_evento: 'evento-1', id_usuario: 'staff-1', nuevo_estado: 'cancelado' },
         async () => { ejecuciones++; }
     );
     await deduplicador.procesarUnaVez(
-        'ticketu.events',
+        'panel.events',
         'evento_actualizado',
         { id_evento: 'evento-1', id_usuario: 'staff-2', nuevo_estado: 'cancelado' },
         async () => { ejecuciones++; }
@@ -48,7 +48,7 @@ test('permite reintentar el mismo payload si el handler falla', async () => {
 
     await assert.rejects(
         deduplicador.procesarUnaVez(
-            'ticketu.events',
+            'auth.events',
             'recuperacion_cuenta',
             { id_usuario: 'usr-1', gmail_destino: 'user@example.com' },
             async () => {
@@ -60,7 +60,7 @@ test('permite reintentar el mismo payload si el handler falla', async () => {
     );
 
     const reintento = await deduplicador.procesarUnaVez(
-        'ticketu.events',
+        'auth.events',
         'recuperacion_cuenta',
         { gmail_destino: 'user@example.com', id_usuario: 'usr-1' },
         async () => {

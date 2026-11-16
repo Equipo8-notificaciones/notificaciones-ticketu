@@ -1,7 +1,7 @@
 /*
  * Simula el mensaje que Entradas debe publicar después de emitir una entrada.
  * No importa ni modifica el microservicio Entradas; reproduce su contrato v3:
- * exchange `ticketu.events`, routing key `entradas_emitidas`.
+ * exchange `entradas.events`, routing key `entradas_emitidas`.
  *
  * Requiere ejecutarse dentro de la red Docker de Notificaciones, con RabbitMQ
  * y el consumidor de Notificaciones activos.
@@ -9,9 +9,9 @@
 const assert = require('node:assert/strict');
 const amqp = require('amqplib');
 
-const EXCHANGE_ENTRADAS = 'ticketu.events';
+const EXCHANGE_ENTRADAS = 'entradas.events';
 const ROUTING_KEY_ENTRADAS = 'entradas_emitidas';
-const EXCHANGE_CONFIRMACION = 'ticketu.events';
+const EXCHANGE_CONFIRMACION = 'notificaciones.events';
 const ROUTING_KEY_CONFIRMACION = 'notificaciones.confirmacion_envio';
 const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@rabbitmq:5672/ticketu';
 const NOTIFICACIONES_URL = process.env.NOTIFICACIONES_URL || 'http://notificaciones:3000';
