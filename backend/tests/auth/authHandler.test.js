@@ -48,6 +48,36 @@ test('recuperacion_cuenta publica email_destino y error_envio solo ante error', 
     }
 });
 
+test('recuperacion_cuenta acepta Id_usuario del contrato de Auth', async () => {
+    const publicaciones = [];
+    const originalPublishToExchange = broker.publishToExchange;
+    const emailService = require('../../src/services/emailService');
+    const originalEnviarCorreoConReintentos = emailService.enviarCorreoConReintentos;
+    broker.publishToExchange = async (...args) => publicaciones.push(args);
+    emailService.enviarCorreoConReintentos = async () => {
+        throw new Error('SMTP de prueba aislado');
+    };
+
+    try {
+        const resultado = await authHandler.manejarRecuperacionCuenta({
+            Id_usuario: 'usr-auth-prueba',
+            email_destino: 'qa@ticketu.test',
+            url: 'https://ticketu.cl/restablecer?token=token-test'
+        });
+
+        assert.equal(resultado.estado_envio, 'error');
+        assert.equal(publicaciones.length, 1);
+        assert.deepEqual(publicaciones[0].slice(0, 2), [
+            'notificaciones.events',
+            'correo_auth'
+        ]);
+        assert.equal(publicaciones[0][2].email_destino, 'qa@ticketu.test');
+    } finally {
+        broker.publishToExchange = originalPublishToExchange;
+        emailService.enviarCorreoConReintentos = originalEnviarCorreoConReintentos;
+    }
+});
+
 test('cuenta_staff envía el url y publica email_destino sin error_envio', async () => {
     const publicaciones = [];
     const originalPublishToExchange = broker.publishToExchange;

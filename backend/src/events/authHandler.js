@@ -79,8 +79,9 @@ function validar(evento, routingKey) {
     if (typeof evento.url !== 'string' || !evento.url.trim()) {
         throw new Error(`Evento "${routingKey}" inválido: falta el campo "url"`);
     }
+    const idUsuario = evento.id_usuario ?? evento.Id_usuario;
     if (routingKey === 'recuperacion_cuenta' &&
-        (typeof evento.id_usuario !== 'string' || !evento.id_usuario.trim())) {
+        (typeof idUsuario !== 'string' || !idUsuario.trim())) {
         throw new Error('Evento "recuperacion_cuenta" inválido: falta el campo "id_usuario"');
     }
     try {

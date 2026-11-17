@@ -1,6 +1,6 @@
 # Integraciones Auth ↔ Notificaciones
 
-Para validar **sesiones HTTP**, ejecuta la prueba A. Para validar la inetgración de Staff se toma la prueba B.
+Para validar **sesiones HTTP**, ejecuta la prueba A. Para validar la inetgración de Staff se toma la prueba B y para validad la de cambio de contraseña la C.
 
 ## A. Autenticación de sesiones HTTP
 
@@ -130,9 +130,9 @@ cd /mnt/c/Users/gherr/Downloads/notificaciones_ticketu/notificaciones
 
 export SMTP_HOST=127.0.0.1
 export SMTP_PORT=1
-export SMTP_USER=''
-export SMTP_PASS=''
-export SMTP_FROM=integration@example.com
+export SMTP_USER=disabled
+export SMTP_PASS=disabled
+export SMTP_FROM=integration@example.invalid
 
 docker compose up -d --force-recreate notificaciones
 curl -fsS http://localhost:3001/ready
@@ -175,3 +175,65 @@ cd /mnt/c/Users/gherr/Downloads/notificaciones_ticketu
 python3 auth/backend/tools/qa-notificaciones/03_limpiar_usuarios.py --list --env-file auth/backend/.env
 python3 auth/backend/tools/qa-notificaciones/03_limpiar_usuarios.py --delete --env-file auth/backend/.env
 ```
+
+## C. Recuperación de cuenta Auth → RabbitMQ → Notificaciones
+
+Esta prueba invoca `POST /api/auth/recover` para una cuenta COMPRADOR existente, observa el evento `auth.events/recuperacion_cuenta` y la respuesta `notificaciones.events/correo_auth`. No imprime el enlace ni el token de recuperación. SMTP debe permanecer aislado: el estado `error` de entrega es esperado y evita enviar correos reales.
+
+Desde PowerShell, inicia o recrea Notificaciones con un SMTP local cerrado. Usa valores ficticios no vacíos para que Docker Compose no recupere los valores del `.env`:
+
+Terminal 1:
+
+```powershell
+export PATH="/tmp/titec-docker-cli:$PATH"
+cd /mnt/c/Users/gherr/Downloads/notificaciones_ticketu
+
+docker version
+docker ps --format 'table {{.Names}}\t{{.Status}}'
+curl -fsS http://localhost:10000/api/health
+curl -fsS http://localhost:3001/ready
+```
+
+luego:
+
+```powershell
+cd /mnt/c/Users/gherr/Downloads/notificaciones_ticketu/notificaciones
+
+export SMTP_HOST=127.0.0.1
+export SMTP_PORT=1
+export SMTP_USER=disabled
+export SMTP_PASS=disabled
+export SMTP_FROM=integration@example.invalid
+
+docker compose up -d --force-recreate notificaciones
+curl -fsS http://localhost:3001/ready
+
+docker exec notificaciones-notificaciones-1 node -e 'console.log(JSON.stringify({smtpHost:process.env.SMTP_HOST,smtpPort:process.env.SMTP_PORT,userConfigured:Boolean(process.env.SMTP_USER),passwordConfigured:Boolean(process.env.SMTP_PASS)}))'
+
+docker exec ticketu-rabbitmq rabbitmqctl list_queues -p ticketu name consumers messages_ready messages_unacknowledged
+```
+
+
+Terminal 2:
+```powershell
+wsl -d Ubuntu
+export PATH="/tmp/titec-docker-cli:$PATH"
+cd /mnt/c/Users/gherr/Downloads/notificaciones_ticketu
+python3 auth/backend/tools/qa-notificaciones/02_monitor_eventos.py --since 2
+```
+
+Después, ejecuta el runner dentro del contenedor. `TEST_EMAIL_DESTINO` debe ser el correo de una cuenta COMPRADOR ya existente en Auth:
+
+Terminal 3:
+```powershell
+wsl -d Ubuntu
+export PATH="/tmp/titec-docker-cli:$PATH"
+
+read -r -p "Correo de una cuenta COMPRADOR existente: " EMAIL
+curl -fsS -X POST http://localhost:10000/api/auth/recover \
+  -H 'Content-Type: application/json' \
+  --data "{\"email\":\"${EMAIL}\"}"
+
+```
+
+El resultado esperado muestra cuatro mensajes `OK`. Auth creará un token de recuperación local; el runner no lo revela y el correo no sale del contenedor.
