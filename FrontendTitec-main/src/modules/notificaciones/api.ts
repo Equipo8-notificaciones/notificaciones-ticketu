@@ -76,9 +76,8 @@ function normalizar_notificacion(valor: unknown): Notificacion {
 
 function verificar_respuesta(res: Response, mensaje_error: string): void {
   if (res.status === 401) {
-    window.location.assign("/auth");
-    throw new Error("La sesión expiró. Inicia sesión nuevamente.");
-  }
+  throw new Error("La sesión expiró. Inicia sesión nuevamente.");
+}
   if (res.status === 403) {
     throw new Error("No tienes permiso para acceder a estas notificaciones.");
   }
