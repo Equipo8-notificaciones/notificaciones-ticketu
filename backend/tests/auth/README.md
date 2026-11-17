@@ -17,6 +17,6 @@ Desde la carpeta `backend/`:
 npm run test:auth-integration
 ```
 
-La prueba registra un usuario temporal mediante Auth, inicia sesión, verifica la cookie `jwt_token`, comprueba que Notificaciones rechaza una sesión ausente y una inválida, y finalmente confirma que Notificaciones acepta la cookie válida y consulta el centro del usuario.
+La prueba registra dos usuarios de prueba mediante Auth (quedan registrados en su base de datos), inicia sesión y verifica la cookie `jwt`. Comprueba que Notificaciones rechaza sesiones ausentes e inválidas, valida ambas sesiones directamente contra Auth, y confirma que cada sesión puede consultar únicamente sus propias notificaciones en Supabase.
 
 Si los servicios usan otras URL, configura `AUTH_SERVICE_URL` y `NOTIFICACIONES_URL`. No se modifica ni inicia el frontend.

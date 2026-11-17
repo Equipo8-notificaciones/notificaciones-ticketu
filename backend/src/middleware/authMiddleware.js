@@ -1,7 +1,7 @@
 function crearAuthMiddleware(fetchSession = globalThis.fetch) {
     return async function autenticarSesion(req, res, next) {
         const cookie = req.headers.cookie;
-        if (!cookie || !/(^|;\s*)jwt_token=[^;]+/.test(cookie)) {
+        if (!cookie || !/(^|;\s*)jwt=[^;]+/.test(cookie)) {
             return res.status(401).json({
                 valido: false,
                 codigo_http: 401,

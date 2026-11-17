@@ -53,7 +53,7 @@ async function main() {
 
     // 2. Cookie falsa: no debe autorizar el acceso.
     const sesionInvalida = await requestNotificaciones(
-        'jwt_token=token_invalido_para_pruebas'
+        'jwt=token_invalido_para_pruebas'
     );
 
     assert.ok(

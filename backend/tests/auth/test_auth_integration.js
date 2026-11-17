@@ -31,8 +31,8 @@ function obtenerCookie(response) {
     const cookies = typeof response.headers.getSetCookie === 'function'
         ? response.headers.getSetCookie()
         : [response.headers.get('set-cookie')].filter(Boolean);
-    const cookie = cookies.find(value => /^jwt_token=/.test(value));
-    assert.ok(cookie, 'Auth no devolvió la cookie jwt_token.');
+    const cookie = cookies.find(value => /^jwt=/.test(value));
+    assert.ok(cookie, 'Auth no devolvió la cookie jwt.');
     return cookie.split(';', 1)[0];
 }
 
@@ -42,7 +42,7 @@ async function registrarEIniciarSesion(etiqueta) {
         email: `notificaciones-${etiqueta}-${unique}@example.com`,
         password: `T3st-${randomBytes(18).toString('base64url')}!`,
         nombre: `Test Notificaciones ${etiqueta} ${unique}`,
-        rut: `DEV-${unique.replaceAll('-', '').slice(0, 12)}`
+        rut: crearRutValido()
     };
     const registration = await request(new URL('/api/auth/register', AUTH_URL), {
         method: 'POST',
@@ -60,6 +60,19 @@ async function registrarEIniciarSesion(etiqueta) {
     return obtenerCookie(login);
 }
 
+function crearRutValido() {
+    const body = String(10000000 + (randomBytes(4).readUInt32BE(0) % 80000000));
+    let factor = 2;
+    let sum = 0;
+    for (let index = body.length - 1; index >= 0; index--) {
+        sum += Number(body[index]) * factor;
+        factor = factor === 7 ? 2 : factor + 1;
+    }
+    const result = 11 - (sum % 11);
+    const digit = result === 11 ? '0' : result === 10 ? 'K' : String(result);
+    return `${body}-${digit}`;
+}
+
 async function main() {
     assert.ok(DATABASE_URL, 'Falta DATABASE_URL; el test de autenticación requiere Supabase.');
     console.log('1. Comprobando Auth, Notificaciones y Supabase...');
@@ -74,7 +87,7 @@ async function main() {
     const noSession = await request(new URL('/api/notificaciones', NOTIFICACIONES_URL));
     assert.equal(noSession.status, 401, 'Notificaciones debe rechazar solicitudes sin cookie.');
     const invalidSession = await request(new URL('/api/notificaciones', NOTIFICACIONES_URL), {
-        headers: { Cookie: 'jwt_token=token_invalido_para_pruebas' }
+        headers: { Cookie: 'jwt=token_invalido_para_pruebas' }
     });
     assert.ok([401, 403].includes(invalidSession.status),
         `Auth debió rechazar la cookie inválida; HTTP ${invalidSession.status}.`);
@@ -148,10 +161,17 @@ async function main() {
         assert.deepEqual(listaManipulada, listaA,
             'Cambiar usuarioId en la URL no debe alterar la identidad autenticada.');
     } finally {
-        await pool.end();
+        try {
+            await pool.query(
+                `DELETE FROM public.notificacion WHERE datos->>'id_evento' = ANY($1::text[])`,
+                [[eventoA, eventoB]]
+            );
+        } finally {
+            await pool.end();
+        }
     }
 
-    console.log('OK: Auth validó ambas cookies jwt_token.');
+    console.log('OK: Auth validó ambas cookies jwt.');
     console.log('OK: Notificaciones rechazó sesiones ausentes e inválidas.');
     console.log('OK: cada usuario consultó únicamente sus notificaciones en Supabase.');
     console.log('OK: modificar usuarioId en la URL no permitió suplantar a otro usuario.');

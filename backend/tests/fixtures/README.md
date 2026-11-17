@@ -2,7 +2,7 @@
 
 `front-notifications.integration.js` verifica el flujo real entre el frontend, Auth y el backend de Notificaciones:
 
-1. Registra un usuario y obtiene su sesión (`jwt_token`) de Auth.
+1. Registra un usuario y obtiene su sesión (`jwt`) de Auth.
 2. Crea una notificación autenticada y comprueba que aparezca en `/api/notificaciones/eventos`.
 3. Comprueba que la página y los recursos del frontend estén disponibles y que el cliente use ese endpoint.
 4. Marca la notificación como leída y verifica el estado final.

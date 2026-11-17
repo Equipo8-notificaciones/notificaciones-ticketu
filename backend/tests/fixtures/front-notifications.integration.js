@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { randomUUID } = require('node:crypto');
+const { randomUUID, randomBytes } = require('node:crypto');
 const http = require('node:http');
 const { after, before, test } = require('node:test');
 
@@ -115,9 +115,22 @@ function obtenerCookieSesion(response) {
     const cookies = typeof response.headers.getSetCookie === 'function'
         ? response.headers.getSetCookie()
         : [response.headers.get('set-cookie')].filter(Boolean);
-    const cookie = cookies.find(value => /^jwt_token=/.test(value));
-    assert.ok(cookie, 'Auth no devolvió la cookie jwt_token.');
+    const cookie = cookies.find(value => /^jwt=/.test(value));
+    assert.ok(cookie, 'Auth no devolvió la cookie jwt.');
     return cookie.split(';', 1)[0];
+}
+
+function crearRutValido() {
+    const body = String(10000000 + (randomBytes(4).readUInt32BE(0) % 80000000));
+    let factor = 2;
+    let sum = 0;
+    for (let index = body.length - 1; index >= 0; index--) {
+        sum += Number(body[index]) * factor;
+        factor = factor === 7 ? 2 : factor + 1;
+    }
+    const result = 11 - (sum % 11);
+    const digit = result === 11 ? '0' : result === 10 ? 'K' : String(result);
+    return `${body}-${digit}`;
 }
 
 test('front y Notificaciones comparten la sesión real de Auth a través del Gateway', async () => {
@@ -126,7 +139,7 @@ test('front y Notificaciones comparten la sesión real de Auth a través del Gat
         email: `front-integration-${uniqueId}@example.com`,
         password: `Test-${randomUUID()}Aa9!`,
         nombre: `Front Integration ${uniqueId}`,
-        rut: `DEV-${uniqueId.replaceAll('-', '').slice(0, 12)}`
+        rut: crearRutValido()
     };
     const jsonHeaders = { 'Content-Type': 'application/json' };
     let cookie;

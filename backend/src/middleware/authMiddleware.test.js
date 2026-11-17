@@ -40,7 +40,7 @@ test('valida con Auth reenviando la cookie original y asigna el perfil', async (
                 })
             };
         });
-        const req = { headers: { cookie: 'otra=valor; jwt_token=token-original' } };
+        const req = { headers: { cookie: 'otra=valor; jwt=token-original' } };
         const res = crearResponse();
         let siguiente = false;
 
@@ -48,7 +48,7 @@ test('valida con Auth reenviando la cookie original y asigna el perfil', async (
 
         assert.equal(llamada.url, 'http://auth.test:4000/api/auth/validar-sesion');
         assert.equal(llamada.options.method, 'GET');
-        assert.equal(llamada.options.headers.Cookie, 'otra=valor; jwt_token=token-original');
+        assert.equal(llamada.options.headers.Cookie, 'otra=valor; jwt=token-original');
         assert.ok(llamada.options.signal instanceof AbortSignal);
         assert.deepEqual(req.user, { id_usuario: 'usuario-auth', rol: 'usuario' });
         assert.equal(res.headers['Cache-Control'], 'no-store');
@@ -65,7 +65,7 @@ test('rechaza una cookie ausente o sin jwt sin consultar Auth', async () => {
     let consultas = 0;
     const middleware = crearAuthMiddleware(async () => { consultas++; });
 
-    for (const cookie of [undefined, 'otra=valor', 'jwt=token', 'jwt_token=']) {
+    for (const cookie of [undefined, 'otra=valor', 'jwt_token=legacy-token', 'jwt=']) {
         const res = crearResponse();
         await middleware({ headers: { cookie } }, res, () => assert.fail('No debe continuar'));
         assert.equal(res.statusCode, 401);
@@ -81,7 +81,7 @@ test('propaga respuestas 401 y 403 de Auth', async () => {
         for (const status of [401, 403]) {
             const middleware = crearAuthMiddleware(async () => ({ status, ok: false }));
             const res = crearResponse();
-            await middleware({ headers: { cookie: 'jwt_token=token' } }, res, () => assert.fail('No debe continuar'));
+            await middleware({ headers: { cookie: 'jwt=token' } }, res, () => assert.fail('No debe continuar'));
             assert.equal(res.statusCode, status);
         }
     } finally {
@@ -97,7 +97,7 @@ test('responde 503 si Auth no está disponible y 502 ante un perfil inválido', 
     try {
         const noDisponible = crearAuthMiddleware(async () => { throw new Error('connection refused'); });
         const resNoDisponible = crearResponse();
-        await noDisponible({ headers: { cookie: 'jwt_token=token' } }, resNoDisponible, () => assert.fail('No debe continuar'));
+        await noDisponible({ headers: { cookie: 'jwt=token' } }, resNoDisponible, () => assert.fail('No debe continuar'));
         assert.equal(resNoDisponible.statusCode, 503);
 
         const perfilInvalido = crearAuthMiddleware(async () => ({
@@ -106,7 +106,7 @@ test('responde 503 si Auth no está disponible y 502 ante un perfil inválido', 
             json: async () => ({ valido: true, usuario: {} })
         }));
         const resPerfilInvalido = crearResponse();
-        await perfilInvalido({ headers: { cookie: 'jwt_token=token' } }, resPerfilInvalido, () => assert.fail('No debe continuar'));
+        await perfilInvalido({ headers: { cookie: 'jwt=token' } }, resPerfilInvalido, () => assert.fail('No debe continuar'));
         assert.equal(resPerfilInvalido.statusCode, 502);
     } finally {
         if (originalUrl === undefined) delete process.env.AUTH_SERVICE_URL;

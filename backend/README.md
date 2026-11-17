@@ -650,6 +650,7 @@ El backend utiliza PostgreSQL de Supabase mediante `pg` y `DATABASE_URL`. No se 
 1. En Supabase, abre **Project Settings → Database → Connection string → URI**.
 2. Copia la URI del *Session pooler* (puerto `5432`) y reemplaza `[DB_PASSWORD]`.
 3. Configura `DATABASE_URL`, `DB_SSL=true` y las credenciales SMTP reales en variables de entorno o en `.env` en la raíz.
+   Para Docker Compose, el archivo es `notificaciones/.env` y usa nombres de servicio Docker. Al ejecutar Node directamente desde `notificaciones/backend`, `app.js` carga `backend/.env`; usa `AUTH_SERVICE_URL=http://localhost:10000`. Conserva las dos plantillas: corresponden a esos contextos distintos.
 4. En el SQL Editor de Supabase, ejecuta el contenido completo de `backend/supabase/schema.sql`.
 Si Supabase ya contiene una versión anterior de las tablas, revisa primero `backend/supabase/migracion-schema-anterior.sql` y ejecútala solo si corresponde a esa estructura antigua. No ejecutes esa migración sobre una base vacía.
 
@@ -671,9 +672,9 @@ Con Auth escuchando en `localhost:10000` y Notificaciones en `localhost:3001`, d
 npm run test:integration:auth
 ```
 
-La prueba registra un usuario temporal en Auth, inicia sesión, comprueba que Auth emite `jwt_token`, valida que Notificaciones rechaza cookies ausentes/incorrectas y verifica que acepta la sesión real y consulta el centro del usuario.
+docker compose -f .\docker-compose.auth-service.yml up -d --build auth-serviceLa prueba registra dos usuarios de prueba en Auth (quedan registrados en su base de datos), inicia sesión y comprueba la cookie `jwt` que emite Auth. Valida directamente ambas sesiones con Auth, verifica que Notificaciones rechaza sesiones ausentes/incorrectas y confirma que cada usuario consulta solo sus propias notificaciones.
 
-Para ejecutar el test desde Windows/PowerShell contra servicios publicados en el host, antes de lanzarlo define:
+Para el contenedor de Notificaciones, `AUTH_SERVICE_URL` debe apuntar al nombre del servicio de Auth en la red Docker: `http://auth-service:10000`. No uses `127.0.0.1` dentro del contenedor, porque apuntaría al propio contenedor de Notificaciones. Para ejecutar el test desde Windows/PowerShell contra los puertos publicados en el host, define estas variables solo en la terminal del test:
 
 ```powershell
 $env:AUTH_SERVICE_URL='http://localhost:10000'
@@ -681,9 +682,9 @@ $env:NOTIFICACIONES_URL='http://localhost:3001'
 npm run test:integration:auth
 ```
 
-El valor `AUTH_SERVICE_URL=http://auth-service:10000` del `.env.example` está pensado para comunicación entre contenedores; desde el host se debe usar `localhost` o el hostname real del servicio.
+El proceso del test usa `AUTH_SERVICE_URL=http://localhost:10000`; el contenedor de Notificaciones conserva `AUTH_SERVICE_URL=http://auth-service:10000`.
 
-**Punto a confirmar con el equipo Auth:** el contrato adjunto describe `GET /internal/validar-sesion` y una cookie `jwt`, mientras que el backend actual y las pruebas existentes usan `GET /api/auth/validar-sesion` y `jwt_token`. Se conserva la ruta/cookie que utiliza la implementación actual para no romper la integración existente; ambos equipos deben confirmar cuál es la versión contractual definitiva.
+La implementación actual de Auth emite la cookie `jwt` y valida la sesión en `GET /api/auth/validar-sesion`; Notificaciones reenvía esa cookie a la misma ruta.
 
 ### Compra de entrada (Entradas → Notificaciones)
 
