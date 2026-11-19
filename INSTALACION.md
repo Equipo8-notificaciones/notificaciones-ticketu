@@ -74,7 +74,7 @@ Para las pruebas de correo, usa una cuenta de prueba registrada con un correo cu
 1. Auth debe enviar datos mediante rabbitMQ.
 2. Abre el correo de invitación recibido y usa el enlace para establecer la contraseña inicial.
 
-**Resultado esperado** · Auth publica `cuenta_staff`. Notificaciones envía la invitación y comunica el resultado mediante `correo_auth`. La cuenta Staff puede completar su primer inicio de sesión. [Flujo de alta de Staff de prueba](notificaciones/backend/tests/integracion/auth/README.md#b-rabbitmq-staff)
+**Resultado esperado** · Auth publica `cuenta_staff`. Notificaciones envía la invitación y comunica el resultado mediante `correo_auth`. La cuenta Staff puede completar su primer inicio de sesión.
 
 ### 9. Ver el aviso de cancelación de un evento (`evento_actualizado`)
 
