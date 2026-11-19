@@ -1,0 +1,88 @@
+# Ejecutar desde la carpeta raíz Notificaciones-Ticketu.
+# El frontend y RabbitMQ son compartidos por el entorno backendTicketU.
+
+services:
+  notificaciones:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: "3000"
+      BROKER_MODE: rabbitmq
+      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
+      DB_SSL: ${DB_SSL:-true}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS:-10000}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:10000}
+      AUTH_TIMEOUT_MS: ${AUTH_TIMEOUT_MS:-5000}
+      AUTH_INTERNAL_API_KEY: ${AUTH_INTERNAL_API_KEY:-}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      PANEL_EVENT_EXCHANGES: ${PANEL_EVENT_EXCHANGES:-ticketu.events,panel.evento.notificaciones.v1}
+      PANEL_EVENT_ROUTING_KEY: ${PANEL_EVENT_ROUTING_KEY:-panel.evento.notificaciones.v1}
+      PANEL_EVENT_QUEUE: ${PANEL_EVENT_QUEUE:-notificaciones.panel_eventos.v1}
+    ports:
+      - "3001:3000"
+    networks:
+      plataforma-eventos-net:
+        aliases:
+          - notificaciones-service
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # Se ejecuta solo con: docker compose --profile test run --rm test-compra-entrada
+  test-compra-entrada:
+    profiles: ["test"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
+      DB_SSL: ${DB_SSL:-true}
+      NOTIFICACIONES_URL: http://notificaciones:3000
+      TEST_TIMEOUT_MS: "45000"
+      TEST_EMAIL_DESTINO: ${TEST_EMAIL_DESTINO:-}
+    networks:
+      - plataforma-eventos-net
+    command: ["node", "tests/integracion/entradas/test_compra_entrada_rabbitmq.js"]
+    depends_on:
+      notificaciones:
+        condition: service_healthy
+    restart: "no"
+
+  # Se ejecuta con: docker compose --profile test run --rm test-panel-evento
+  test-panel-evento:
+    profiles: ["test"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
+      DB_SSL: ${DB_SSL:-true}
+      TEST_TIMEOUT_MS: "45000"
+      PANEL_EVENT_EXCHANGES: ${PANEL_EVENT_EXCHANGES:-ticketu.events,panel.evento.notificaciones.v1}
+      PANEL_EVENT_ROUTING_KEY: ${PANEL_EVENT_ROUTING_KEY:-panel.evento.notificaciones.v1}
+    networks:
+      - plataforma-eventos-net
+    command: ["node", "tests/panel/test_panel_evento_rabbitmq.js"]
+    depends_on:
+      notificaciones:
+        condition: service_healthy
+    restart: "no"
+
+networks:
+  plataforma-eventos-net:
+    external: true
