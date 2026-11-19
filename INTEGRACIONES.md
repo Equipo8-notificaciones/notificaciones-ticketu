@@ -7,11 +7,20 @@ Este documento declara las interfaces que Notificaciones implementa. Las rutas, 
 
 ## Integraciones declaradas
 
-| ID | Tipo | Contraparte | Dirección | Contrato y evidencia |
-|---|---|---|---|---|
-| **I1 — Auth** | **A. Autenticación** | Auth | Notificaciones → Auth | `GET /internal/validar-sesion`; reenvía la cookie `jwt` sin modificar y la cabecera `x-api-key`. Evidencia: `backend/src/middleware/authMiddleware.js`, `backend/tests/auth/authMiddleware.test.js` y `backend/tests/auth/test_auth_integration.js`. |
-| **I2 — API Gateway** | **B. API publicada a través del Gateway** | API Gateway TicketU / Frontend unificado | Cliente → Gateway → Notificaciones | `GET /api/notificaciones` y operaciones de notificaciones bajo `/api/notificaciones/*`. Gateway dirige `/api/notificaciones` a `NOTIFICACIONES_SERVICE_URL=http://notificaciones-service:3000`. Evidencia: `backend/src/routes/notificacionRoutes.js`, `backend/README.md` (sección API Gateway) y la prueba de extremo a extremo descrita en `INTEGRACION.md`. |
-| **I3 — Panel Organizador** | **C. Broker de eventos** | Panel Organizador | Panel → RabbitMQ → Notificaciones | Exchange principal `ticketu.events`, exchange adicional `panel.evento.notificaciones.v1`, ambos tipo `topic`, routing key `panel.evento.notificaciones.v1`. El tipo de evento llega en la propiedad AMQP `type`; el cuerpo es JSON plano. Evidencia: `backend/src/broker/suscripciones.js`, `backend/src/broker/rabbitmqBroker.js`, `backend/src/events/panelEventoHandler.js`, `backend/tests/broker/suscripciones.test.js` y `backend/tests/panel/test_panel_evento_rabbitmq.js`. |
+| Integración | Tipo | Módulo contraparte | Servicio, endpoint o tópico | Contrato (ruta en el repo) | Ítem en GitHub |
+|---|---|---|---|---|---|
+| I1 | A. Servicio ofrecido | Auth → Notificaciones | GET /api/auth/validar-sesion | main/Documentación/Contratos/Contrato-Auth-Autentificacion.md | INT-01 |
+| I2 | B. Servicio ofrecido | Notificaciones → Frontend unificado | `POST /api/notificaciones/:id/leida`, `POST /api/notificaciones/marcar-todas-leidas` y `DELETE /api/notificaciones/:id` mediante el API Gateway | `notificaciones/backend/src/routes/notificacionRoutes.js` | — |
+| I3 | C. Mensajería | Entradas → Notificaciones | Consume `entradas.events/entradas_emitidas` y publica `notificaciones.events/notificaciones.confirmacion_envio`. El aviso de compra aparece en la app. | `notificaciones/backend/tests/integracion/entradas/README.md` | INT-02 |
+
+## **Otras integraciones**
+
+| Integración | Tipo | Módulo contraparte | Servicio, endpoint o tópico | Contrato (ruta en el repo) | Ítem en GitHub |
+|---|---|---|---|---|---|
+| R2 | B. Servicio ofrecido | Notificaciones → Frontend unificado | `GET http://localhost:8080/api/notificaciones/eventos` mediante el API Gateway | `notificaciones/backend/src/routes/notificacionRoutes.js` | — |
+| R1 | A. Servicio consumido | Auth → Frontend unificado | `POST /api/auth/login` emite la cookie `jwt`. Notificaciones valida la sesión y autoriza el acceso a los avisos por usuario. Los permisos por rol están pendientes en Notificaciones. | `auth/backend/docs/swagger.yaml`, `notificaciones/backend/src/middleware/authMiddleware.js` | INT-01 |
+| R3 | C. Mensajería | Auth ↔ Notificaciones | Consume `auth.events/recuperacion_cuenta` y `auth.events/cuenta_staff`. Publica el resultado del correo en `notificaciones.events/correo_auth`. | `notificaciones/backend/tests/integracion/auth/README.md` | INT-03 |
+| R3 | C. Mensajería | Panel Organizador → Notificaciones | Consume `panel.evento.notificaciones.v1/evento_actualizado` y `panel.evento.notificaciones.v1/evento_reprogramado`los datos son mostrados en el front de compradores y organizador. | `notificaciones/backend/src/broker/suscripciones.js` | INT-04 |
 
 ## Contratos adicionales consumidos por Notificaciones
 
@@ -23,7 +32,6 @@ Este documento declara las interfaces que Notificaciones implementa. Las rutas, 
 Las colas de Notificaciones son propias y durables. No se comparte una misma cola consumidora entre Notificaciones y otros microservicios.
 
 ## Formato de Panel soportado
-
 - Exchanges: `ticketu.events` y `panel.evento.notificaciones.v1`.
 - Tipo de exchange: `topic`.
 - Routing key: `panel.evento.notificaciones.v1`.
