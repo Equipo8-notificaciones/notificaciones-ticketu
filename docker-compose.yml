@@ -9,14 +9,13 @@ services:
     environment:
       PORT: "3000"
       BROKER_MODE: rabbitmq
-      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      BROKER_URL: amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu
       DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
       DB_SSL: ${DB_SSL:-true}
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
       DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS:-10000}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:10000}
       AUTH_TIMEOUT_MS: ${AUTH_TIMEOUT_MS:-5000}
-      AUTH_INTERNAL_API_KEY: ${AUTH_INTERNAL_API_KEY:-}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -24,9 +23,6 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
-      PANEL_EVENT_EXCHANGES: ${PANEL_EVENT_EXCHANGES:-ticketu.events,panel.evento.notificaciones.v1}
-      PANEL_EVENT_ROUTING_KEY: ${PANEL_EVENT_ROUTING_KEY:-panel.evento.notificaciones.v1}
-      PANEL_EVENT_QUEUE: ${PANEL_EVENT_QUEUE:-notificaciones.panel_eventos.v1}
     ports:
       - "3001:3000"
     networks:
@@ -48,7 +44,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      BROKER_URL: amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu
       DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
       DB_SSL: ${DB_SSL:-true}
       NOTIFICACIONES_URL: http://notificaciones:3000
@@ -69,12 +65,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      BROKER_URL: ${BROKER_URL_DOCKER:-amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu}
+      BROKER_URL: amqp://ticketu:ticketu_dev@ticketu-rabbitmq:5672/ticketu
       DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en el entorno o en el archivo .env}
       DB_SSL: ${DB_SSL:-true}
       TEST_TIMEOUT_MS: "45000"
-      PANEL_EVENT_EXCHANGES: ${PANEL_EVENT_EXCHANGES:-ticketu.events,panel.evento.notificaciones.v1}
-      PANEL_EVENT_ROUTING_KEY: ${PANEL_EVENT_ROUTING_KEY:-panel.evento.notificaciones.v1}
     networks:
       - plataforma-eventos-net
     command: ["node", "tests/panel/test_panel_evento_rabbitmq.js"]
