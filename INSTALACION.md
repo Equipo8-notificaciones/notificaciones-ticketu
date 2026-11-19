@@ -87,7 +87,7 @@ Prueba del consumidor Panel contra RabbitMQ y la base configurada:
 
 ```powershell
 Set-Location .. 
-
+```
 
 # Notificaciones
 
