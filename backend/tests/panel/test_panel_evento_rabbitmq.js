@@ -4,8 +4,7 @@ const assert = require('node:assert/strict');
 const amqp = require('amqplib');
 const { Pool } = require('pg');
 
-const PANEL_EXCHANGES = [...new Set((process.env.PANEL_EVENT_EXCHANGES || 'ticketu.events,panel.evento.notificaciones.v1').split(',').map(value => value.trim()).filter(Boolean))];
-const PANEL_ROUTING_KEY = process.env.PANEL_EVENT_ROUTING_KEY || 'panel.evento.notificaciones.v1';
+const EXCHANGE_PANEL = 'panel.evento.notificaciones.v1';
 const BROKER_URL = process.env.BROKER_URL || 'amqp://ticketu:ticketu_dev@localhost:5672/ticketu';
 const DATABASE_URL = process.env.DATABASE_URL;
 const TIMEOUT_MS = Number(process.env.TEST_TIMEOUT_MS || 45000);
@@ -27,17 +26,13 @@ async function crearEntradas(pool, idEvento, ids, fecha) {
 }
 
 async function publicar(channel, tipo, evento) {
-    const body = Buffer.from(JSON.stringify(evento));
-    for (const exchange of PANEL_EXCHANGES) {
-        channel.publish(exchange, PANEL_ROUTING_KEY, body, {
-            contentType: 'application/json',
-            contentEncoding: 'utf-8',
-            persistent: true,
-            mandatory: true,
-            type: tipo,
-            messageId: `panel-test-${tipo}-${evento.id_evento}`
-        });
-    }
+    channel.publish(EXCHANGE_PANEL, EXCHANGE_PANEL, Buffer.from(JSON.stringify(evento)), {
+        contentType: 'application/json',
+        type: tipo,
+        headers: { tipo },
+        persistent: true,
+        mandatory: true
+    });
     await channel.waitForConfirms();
 }
 
@@ -87,9 +82,7 @@ async function main() {
         await pool.query('SELECT 1');
         connection = await amqp.connect(BROKER_URL);
         channel = await connection.createConfirmChannel();
-        for (const exchange of PANEL_EXCHANGES) {
-            await channel.assertExchange(exchange, 'topic', { durable: true });
-        }
+        await channel.assertExchange(EXCHANGE_PANEL, 'topic', { durable: true });
 
         // Caso 1: cancelación. Deben recibirla solo las dos entradas activas.
         const idEventoCancelado = `evt-panel-cancel-${unique}`;
@@ -168,8 +161,7 @@ async function main() {
             'La fecha y hora nuevas deben persistirse para todas las entradas del evento.');
         await verificarEnvios(pool, idEventoReprogramado);
 
-        console.log(`OK: mensajes de Panel recibidos usando routing key ${PANEL_ROUTING_KEY} y AMQP type.`);
-        console.log(`Exchanges verificados: ${PANEL_EXCHANGES.join(', ')}.`);
+        console.log('OK: Panel publicó evento_actualizado y evento_reprogramado.');
         console.log('OK: la cancelación llegó solo a asistentes con entradas activas y actualizó estado_evento.');
         console.log('OK: la reprogramación llegó solo a asistentes activos y actualizó fecha_evento.');
         console.log('OK: el organizador recibió "El envío se realizó correctamente" en ambos casos.');

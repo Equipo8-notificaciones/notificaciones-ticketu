@@ -43,12 +43,13 @@ app.use('/api/notificaciones', notificacionRoutes);
 app.use(errorHandler);
 
 if (require.main === module) {
-    const { supervisarSuscripciones } = require('./src/broker/suscripciones');
+    const { iniciarSuscripciones } = require('./src/broker/suscripciones');
     app.listen(PORT, () => {
         console.log(`Servicio de Notificaciones corriendo en http://localhost:${PORT}`);
     });
-    supervisarSuscripciones().catch(error => {
-        console.error('[broker] Error no recuperable en el supervisor de suscripciones:', error.message);
+    iniciarSuscripciones().catch(error => {
+        console.error('[broker] No se pudieron iniciar las suscripciones:', error.message);
+        console.error('[broker] El servidor HTTP sigue activo. Comprueba BROKER_MODE/BROKER_URL.');
     });
 }
 

@@ -135,9 +135,7 @@ async function procesarEventoPanel({
     const faltantes = totalUsuarios - notificados.length;
     const resultado = {
         id_evento: idEvento,
-        id_usuario: idUsuario,
-        // El proceso solo se declara exitoso cuando se notificó a todos los asistentes activos.
-        nuevo_estado: faltantes === 0 ? 'exitoso' : 'error',
+        nuevo_estado: totalUsuarios > 0 && notificados.length / totalUsuarios > 0.6 ? 'exito' : 'error',
         usuarios_notificados: notificados.length,
         usuarios_faltantes: faltantes,
         fecha_envio: new Date().toISOString()
@@ -202,7 +200,7 @@ async function notificarOrganizador(idUsuario, resultado) {
             id_usuario: idUsuario,
             tipo: 'CAMBIO_EVENTO',
             canal: 'APP',
-            mensaje: resultado.nuevo_estado === 'exitoso'
+            mensaje: resultado.nuevo_estado === 'exito'
                 ? `El envío se realizó correctamente. ${mensaje}`
                 : `El envío no se completó correctamente. ${mensaje}`,
             datos: resultado

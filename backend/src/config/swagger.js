@@ -71,12 +71,12 @@ const options = {
                 },
                 PanelResultadoNotificacion: {
                     type: 'object',
-                    required: ['id_evento', 'id_usuario', 'nuevo_estado', 'usuarios_notificados', 'usuarios_faltantes', 'fecha_envio'],
+                    required: ['id_evento', 'nuevo_estado', 'usuarios_notificados', 'usuarios_faltantes', 'fecha_envio'],
                     description: 'Resultado del proceso de notificación de un evento, enviado al organizador.',
                     properties: {
                         id_evento: { type: 'string', example: 'evt-001' },
                         id_usuario: { type: 'string', example: 'usr-001' },
-                        nuevo_estado: { type: 'string', enum: ['exitoso', 'error'] },
+                        nuevo_estado: { type: 'string', enum: ['exito', 'error'] },
                         usuarios_notificados: { type: 'integer', example: 150 },
                         usuarios_faltantes: { type: 'integer', example: 0 },
                         fecha_envio: { type: 'string', format: 'date-time', example: '2026-10-01T16:30:00.000Z' }

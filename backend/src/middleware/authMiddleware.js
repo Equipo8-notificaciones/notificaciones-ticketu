@@ -11,9 +11,8 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
         }
 
         const authServiceUrl = process.env.AUTH_SERVICE_URL;
-        const apiKey = process.env.AUTH_INTERNAL_API_KEY || process.env.INTERNAL_API_KEY;
-        if (!authServiceUrl || !apiKey) {
-            console.error('[auth] Faltan AUTH_SERVICE_URL o AUTH_INTERNAL_API_KEY/INTERNAL_API_KEY.');
+        if (!authServiceUrl) {
+            console.error('[auth] Falta configurar AUTH_SERVICE_URL.');
             return res.status(503).json({ error: 'Servicio de autenticación no disponible' });
         }
 
@@ -25,7 +24,7 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
 
         let validationUrl;
         try {
-            validationUrl = new URL('/internal/validar-sesion', authServiceUrl);
+            validationUrl = new URL('/api/auth/validar-sesion', authServiceUrl);
             if (!['http:', 'https:'].includes(validationUrl.protocol)) {
                 throw new Error('AUTH_SERVICE_URL debe usar HTTP o HTTPS');
             }
@@ -40,10 +39,7 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
         try {
             authResponse = await fetchSession(validationUrl.toString(), {
                 method: 'GET',
-                headers: {
-                    Cookie: cookie,
-                    'x-api-key': apiKey
-                },
+                headers: { Cookie: cookie },
                 signal: controller.signal
             });
         } catch (error) {

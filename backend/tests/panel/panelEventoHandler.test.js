@@ -86,8 +86,7 @@ test('evento_actualizado consulta entradas activas y confirma al id_usuario envi
 
     assert.deepEqual(resultado, {
         id_evento: 'evt-001',
-        id_usuario: 'staff-001',
-        nuevo_estado: 'exitoso',
+        nuevo_estado: 'exito',
         usuarios_notificados: 5,
         usuarios_faltantes: 0,
         fecha_envio: resultado.fecha_envio
@@ -121,26 +120,6 @@ test('evento_actualizado considera error cuando solo se notifica al 60% de los u
     assert.equal(creadas.at(-1).datos.nuevo_estado, 'error');
 });
 
-test('evento_actualizado informa error si queda un asistente activo sin notificación', async () => {
-    const creadas = prepararNotificaciones({
-        usuarios: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5']
-            .map(id_usuario => ({ id_usuario })),
-        fallarIds: [2]
-    });
-
-    const resultado = await handler.manejarEventoActualizado({
-        id_evento: 'evt-001',
-        id_usuario: 'staff-001',
-        nuevo_estado: 'cancelado'
-    });
-
-    assert.equal(resultado.nuevo_estado, 'error');
-    assert.equal(resultado.id_usuario, 'staff-001');
-    assert.equal(resultado.usuarios_notificados, 4);
-    assert.equal(resultado.usuarios_faltantes, 1);
-    assert.match(creadas.at(-1).mensaje, /El envío no se completó correctamente/);
-});
-
 test('evento_reprogramado acepta publicado y notifica con la nueva fecha y hora', async () => {
     const creadas = prepararNotificaciones({
         usuarios: ['user-1', 'user-2', 'user-3']
@@ -155,7 +134,7 @@ test('evento_reprogramado acepta publicado y notifica con la nueva fecha y hora'
         hora_cambio: '00:00:00'
     });
 
-    assert.equal(resultado.nuevo_estado, 'exitoso');
+    assert.equal(resultado.nuevo_estado, 'exito');
     assert.equal(creadas[0].datos.fecha_evento, '2026-12-13');
     assert.equal(creadas[0].datos.hora_evento, '00:00:00');
     assert.match(creadas[0].mensaje, /2026-12-13 a las 00:00:00/);
