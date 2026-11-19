@@ -1,0 +1,40 @@
+{
+  "name": "notificaciones-api",
+  "version": "1.0.0",
+  "description": "Backend del m\u00f3dulo de Notificaciones ",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --require ./tests/unit-test-setup.js --test tests/**/*.test.js",
+    "check": "node --check app.js",
+    "test:compra": "node tests/integracion/entradas/test_compra_entrada_rabbitmq.js",
+    "test:auth-integration": "node tests/auth/test_auth_integration.js",
+    "test:integration:auth": "node tests/auth/test_auth_integration.js",
+    "test:integration:auth-rabbitmq": "node tests/integracion/auth/test_auth_notificaciones_rabbitmq.js",
+    "test:integration:compra": "node tests/integracion/entradas/test_compra_entrada_rabbitmq.js",
+    "test:integration:panel": "node tests/panel/test_panel_evento_rabbitmq.js",
+    "test:email:recovery": "node tests/envioCorreo/test_recuperacion_cuenta_rabbitmq.js",
+    "test:email:staff": "node tests/envioCorreo/test_cuenta_staff_rabbitmq.js",
+    "test:email:entradas": "node tests/envioCorreo/test_entradas_emitidas_rabbitmq.js",
+    "test:email": "npm run test:email:recovery && npm run test:email:staff && npm run test:email:entradas",
+    "test:integration": "npm run test:integration:auth && npm run test:integration:compra && npm run test:integration:panel"
+  },
+  "keywords": [
+    "notificaciones",
+    "express",
+    "microservicios"
+  ],
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0",
+    "nodemailer": "^6.10.1",
+    "pg": "^8.16.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
