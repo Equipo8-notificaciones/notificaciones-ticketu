@@ -1,0 +1,105 @@
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ticketu
+      RABBITMQ_DEFAULT_PASS: ticketu_dev
+      RABBITMQ_DEFAULT_VHOST: ticketu
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 3s
+      timeout: 8s
+      retries: 20
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: qa
+      POSTGRES_PASSWORD: qa_local
+      POSTGRES_DB: notificaciones_panel_test
+    volumes:
+      - type: bind
+        source: ../../../supabase/schema.sql
+        target: /docker-entrypoint-initdb.d/01-schema.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "qa", "-d", "notificaciones_panel_test"]
+      interval: 3s
+      timeout: 4s
+      retries: 15
+
+  mongo:
+    image: mongo:7
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 3s
+      timeout: 6s
+      retries: 15
+
+  auth-fixture:
+    image: node:26-alpine
+    command: ["node", "/fixture/server.mjs"]
+    volumes:
+      - type: bind
+        source: ../../../../../panel/tools/mock-auth/server.mjs
+        target: /fixture/server.mjs
+        read_only: true
+        bind:
+          create_host_path: false
+
+  entradas-fixture:
+    image: node:26-alpine
+    command: ["node", "/fixture/server.mjs"]
+    volumes:
+      - type: bind
+        source: ../../../../../panel/tools/mock-entradas/server.mjs
+        target: /fixture/server.mjs
+        read_only: true
+        bind:
+          create_host_path: false
+
+  panel:
+    build:
+      context: ../../../../../panel
+      dockerfile: backend/Dockerfile
+    environment:
+      MONGO_URI: mongodb://mongo:27017/panel_demo
+      AUTH_SERVICE_URL: http://auth-fixture:4001
+      ENTRADAS_SERVICE_URL: http://entradas-fixture:4002
+      BROKER_URL: amqp://ticketu:ticketu_dev@rabbit:5672/ticketu
+      BROKER_EXCHANGES_ADICIONALES: panel.evento.notificaciones.v1=panel.evento.notificaciones.v1
+      SEED_DEMO: "true"
+    depends_on:
+      rabbit:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      auth-fixture:
+        condition: service_started
+      entradas-fixture:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 4s
+      retries: 15
+
+  notificaciones:
+    build: ../../..
+    environment:
+      BROKER_MODE: rabbitmq
+      BROKER_URL: amqp://ticketu:ticketu_dev@rabbit:5672/ticketu
+      DATABASE_URL: postgresql://qa:qa_local@postgres:5432/notificaciones_panel_test
+      DB_SSL: "false"
+    depends_on:
+      rabbit:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 4s
+      retries: 15

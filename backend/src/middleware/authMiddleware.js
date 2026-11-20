@@ -16,6 +16,12 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
             return res.status(503).json({ error: 'Servicio de autenticación no disponible' });
         }
 
+        const internalApiKey = process.env.INTERNAL_API_KEY;
+        if (!internalApiKey) {
+            console.error('[auth] Falta configurar INTERNAL_API_KEY.');
+            return res.status(503).json({ error: 'Servicio de autenticación no disponible' });
+        }
+
         const timeoutMs = Number(process.env.AUTH_TIMEOUT_MS || 5000);
         if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2147483647) {
             console.error('[auth] AUTH_TIMEOUT_MS debe ser un número mayor que cero.');
@@ -24,7 +30,7 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
 
         let validationUrl;
         try {
-            validationUrl = new URL('/api/auth/validar-sesion', authServiceUrl);
+            validationUrl = new URL('/internal/validar-sesion', authServiceUrl);
             if (!['http:', 'https:'].includes(validationUrl.protocol)) {
                 throw new Error('AUTH_SERVICE_URL debe usar HTTP o HTTPS');
             }
@@ -39,7 +45,10 @@ function crearAuthMiddleware(fetchSession = globalThis.fetch) {
         try {
             authResponse = await fetchSession(validationUrl.toString(), {
                 method: 'GET',
-                headers: { Cookie: cookie },
+                headers: {
+                    Cookie: cookie,
+                    'x-api-key': internalApiKey
+                },
                 signal: controller.signal
             });
         } catch (error) {

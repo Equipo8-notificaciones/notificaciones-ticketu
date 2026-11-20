@@ -684,7 +684,7 @@ npm run test:integration:auth
 
 El proceso del test usa `AUTH_SERVICE_URL=http://localhost:10000`; el contenedor de Notificaciones conserva `AUTH_SERVICE_URL=http://auth-service:10000`.
 
-La implementación actual de Auth emite la cookie `jwt` y valida la sesión en `GET /api/auth/validar-sesion`; Notificaciones reenvía esa cookie a la misma ruta.
+La implementación actual de Auth emite la cookie `jwt` y valida la sesión en `GET /internal/validar-sesion`; Notificaciones reenvía esa cookie junto con la cabecera `x-api-key` configurada mediante `INTERNAL_API_KEY`.
 
 ### Compra de entrada (Entradas → Notificaciones)
 

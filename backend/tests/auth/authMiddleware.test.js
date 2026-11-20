@@ -24,8 +24,10 @@ function crearResponse() {
 test('valida con Auth reenviando la cookie original y asigna el perfil', async () => {
     const originalUrl = process.env.AUTH_SERVICE_URL;
     const originalTimeout = process.env.AUTH_TIMEOUT_MS;
+    const originalApiKey = process.env.INTERNAL_API_KEY;
     process.env.AUTH_SERVICE_URL = 'http://auth.test:4000';
     process.env.AUTH_TIMEOUT_MS = '1200';
+    process.env.INTERNAL_API_KEY = 'clave-interna-test';
 
     try {
         let llamada;
@@ -46,9 +48,10 @@ test('valida con Auth reenviando la cookie original y asigna el perfil', async (
 
         await middleware(req, res, () => { siguiente = true; });
 
-        assert.equal(llamada.url, 'http://auth.test:4000/api/auth/validar-sesion');
+        assert.equal(llamada.url, 'http://auth.test:4000/internal/validar-sesion');
         assert.equal(llamada.options.method, 'GET');
         assert.equal(llamada.options.headers.Cookie, 'otra=valor; jwt=token-original');
+        assert.equal(llamada.options.headers['x-api-key'], 'clave-interna-test');
         assert.ok(llamada.options.signal instanceof AbortSignal);
         assert.deepEqual(req.user, { id_usuario: 'usuario-auth', rol: 'usuario' });
         assert.equal(res.headers['Cache-Control'], 'no-store');
@@ -58,6 +61,8 @@ test('valida con Auth reenviando la cookie original y asigna el perfil', async (
         else process.env.AUTH_SERVICE_URL = originalUrl;
         if (originalTimeout === undefined) delete process.env.AUTH_TIMEOUT_MS;
         else process.env.AUTH_TIMEOUT_MS = originalTimeout;
+        if (originalApiKey === undefined) delete process.env.INTERNAL_API_KEY;
+        else process.env.INTERNAL_API_KEY = originalApiKey;
     }
 });
 
