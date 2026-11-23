@@ -1,0 +1,4766 @@
+{
+  "info": {
+    "name": "TicketU | Notificaciones - Plan de pruebas",
+    "description": "Pruebas del PDF Copia de Plan de Pruebas Notificación. Las carpetas 01 a 06 usan el laboratorio local en el puerto 3091. La carpeta 07 prueba Gateway. La carpeta 08 requiere activar expresamente el flujo con Auth y Entradas reales. Lee README.md antes de ejecutar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 · Centro, estados y autorización",
+      "description": "Usa dos identidades ficticias. Las operaciones que cambian estado afectan únicamente los datos del laboratorio Docker.",
+      "item": [
+        {
+          "name": "Disponibilidad de Notificaciones, PostgreSQL y RabbitMQ",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Laboratorio activo\", () => { pm.expect(pm.response.json().broker).to.eql(\"RabbitMQ\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/listo"
+          },
+          "response": []
+        },
+        {
+          "name": "Sin cookie",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "JWT inválido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-rechazo"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth rechaza con 403",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-prohibido"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth responde 500",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 500\", () => pm.response.to.have.status(500));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-error-auth"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth responde 503",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503\", () => pm.response.to.have.status(503));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-no-disponible"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth agota el tiempo",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503\", () => pm.response.to.have.status(503));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-timeout"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth cierra la conexión",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503\", () => pm.response.to.have.status(503));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-sin-respuesta"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth responde 200 sin identidad",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 502\", () => pm.response.to.have.status(502));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-sin-identidad"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth responde con ID vacío",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 502\", () => pm.response.to.have.status(502));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-id-vacio"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth responde con ID numérico",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 502\", () => pm.response.to.have.status(502));",
+                  "pm.test(\"Respuesta sin datos protegidos\", () => { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-id-numerico"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Sesión válida y reenvío íntegro de cookie",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"La identidad proviene de Auth\", () => { pm.expect(lista.every(n => n.id_usuario === 'qa-comprador-a')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "preferencia=es; jwt=qa-cookie-prueba; tema=claro"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Auth interno, cookie original y ausencia de JWT en logs",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Auth interno recibe Cookie original y x-api-key\", () => { pm.expect(x.reenvio).to.eql(true); });",
+                  "pm.test(\"Las trazas no muestran JWT de prueba\", () => { pm.expect(x.tokenEnLogs).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/trazas",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear aviso A1",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const n = pm.response.json();",
+                  "pm.collectionVariables.set('a_1', String(n.id_notificacion));",
+                  "pm.test(\"Estado inicial es NO_LEIDA\", () => { pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); });",
+                  "pm.test(\"Propietario autenticado y canal APP\", () => { pm.expect(n.id_usuario).to.eql(\"qa-comprador-a\");pm.expect(n.canal).to.eql(\"APP\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA aviso A1 {{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear aviso A2",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const n = pm.response.json();",
+                  "pm.collectionVariables.set('a_2', String(n.id_notificacion));",
+                  "pm.test(\"Estado inicial es NO_LEIDA\", () => { pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); });",
+                  "pm.test(\"Propietario autenticado y canal APP\", () => { pm.expect(n.id_usuario).to.eql(\"qa-comprador-a\");pm.expect(n.canal).to.eql(\"APP\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA aviso A2 {{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear aviso A3",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const n = pm.response.json();",
+                  "pm.collectionVariables.set('a_3', String(n.id_notificacion));",
+                  "pm.test(\"Estado inicial es NO_LEIDA\", () => { pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); });",
+                  "pm.test(\"Propietario autenticado y canal APP\", () => { pm.expect(n.id_usuario).to.eql(\"qa-comprador-a\");pm.expect(n.canal).to.eql(\"APP\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA aviso A3 {{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear aviso B1",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const n = pm.response.json();",
+                  "pm.collectionVariables.set('b_1', String(n.id_notificacion));",
+                  "pm.test(\"Estado inicial es NO_LEIDA\", () => { pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); });",
+                  "pm.test(\"Propietario autenticado y canal APP\", () => { pm.expect(n.id_usuario).to.eql(\"qa-comprador-b\");pm.expect(n.canal).to.eql(\"APP\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA aviso B1 {{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preparar dos avisos con la misma fecha",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.collectionVariables.set('fechas_iguales', JSON.stringify(x.ids));",
+                  "pm.test(\"Se crearon dos IDs distintos\", () => { pm.expect(new Set(x.ids).size).to.eql(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/fechas-iguales",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Orden de más reciente a más antiguo, incluidos empates",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"El orden es descendente y ambas filas empatadas están en el resultado\", () => { const fechas = lista.map(n => Date.parse(n.created_at)); pm.expect(fechas.every((f, i) => i === 0 || fechas[i-1] >= f)).to.be.true; const ids = JSON.parse(pm.collectionVariables.get('fechas_iguales')); const empatadas = lista.filter(n => ids.includes(String(n.id_notificacion))); pm.expect(empatadas.length).to.eql(2); pm.expect(empatadas[0].created_at).to.eql(empatadas[1].created_at); });",
+                  "pm.test(\"A ve solo datos propios\", () => { pm.expect(lista.every(n => n.id_usuario === 'qa-comprador-a')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "B puede consultar su propia notificación",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Pertenece a B\", () => { pm.expect(pm.response.json().id_usuario).to.eql(\"qa-comprador-b\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{b_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede abrir un aviso de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede consultar envíos de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}/envios"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede marcar un aviso de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}/leida"
+          },
+          "response": []
+        },
+        {
+          "name": "La operación ajena no cambió la lectura",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Continúa sin leer\", () => { pm.expect(pm.response.json().estado_lectura).to.eql(\"NO_LEIDA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "A abre un aviso y lo marca como leído",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve LEIDA\", () => { pm.expect(pm.response.json().estado_lectura).to.eql(\"LEIDA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}/leida"
+          },
+          "response": []
+        },
+        {
+          "name": "Persiste la lectura y el resto queda sin leer",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"Solo cambió el aviso seleccionado\", () => { const estado = key => lista.find(n => String(n.id_notificacion) === pm.collectionVariables.get(key)).estado_lectura; pm.expect(estado('a_1')).to.eql('LEIDA'); pm.expect(estado('a_2')).to.eql('NO_LEIDA'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Marcar todas como leídas",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"Se marcaron varios avisos de A\", () => { pm.expect(lista.length).to.be.at.least(2); pm.expect(lista.every(n => n.id_usuario === 'qa-comprador-a' && n.estado_lectura === 'LEIDA')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/marcar-todas-leidas"
+          },
+          "response": []
+        },
+        {
+          "name": "Reconsulta tras marcar todas",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"Los estados permanecen leídos\", () => { pm.expect(lista.every(n => n.estado_lectura === 'LEIDA')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede eliminar un aviso de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede eliminar en lote un aviso de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 con lote vacio\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"No se elimina ni expone un aviso ajeno\", () => pm.expect(pm.response.json()).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{a_1}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "El aviso ajeno permanece intacto",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La eliminación ajena no cambia su estado\", () => { pm.expect(pm.response.json().estado_lectura).to.eql(\"LEIDA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar solo el aviso A1",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El borrado lógico marca ELIMINADA\", () => { pm.expect(pm.response.json().estado_lectura).to.eql(\"ELIMINADA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar A2 y A3 en una operación",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"Se eliminaron los dos IDs seleccionados\", () => { const ids = ['a_2','a_3'].map(k => pm.collectionVariables.get(k)); pm.expect(lista.map(n => String(n.id_notificacion)).sort()).to.eql(ids.sort()); pm.expect(lista.every(n => n.estado_lectura === 'ELIMINADA')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{a_2}}\",\n    \"{{a_3}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Los avisos eliminados ya no aparecen en el centro",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"El centro excluye los IDs borrados\", () => { const ids = ['a_1','a_2','a_3'].map(k => pm.collectionVariables.get(k)); pm.expect(lista.some(n => ids.includes(String(n.id_notificacion)))).to.be.false; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminación lógica persistida al consultar el registro",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado y fecha de eliminación persistidos\", () => { const n = pm.response.json(); pm.expect(n.estado_lectura).to.eql('ELIMINADA'); pm.expect(n.fecha_eliminacion).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{a_1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "La API vuelve a cargar después de revalidar la sesión",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El centro recupera una respuesta JSON\", () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Fallo controlado al guardar en PostgreSQL",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"La API comunica el fallo y no persiste la fila\", () => { pm.expect(x.status).to.eql(400);pm.expect(x.persistidos).to.eql(0);pm.expect(x.data.detalle).to.include('fallo de almacenamiento'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/db-error",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forzar NO_LEIDA en la creación de un aviso",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Estado guardado como NO_LEIDA\", () => { const n = pm.response.json(); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.estado).to.eql(\"NO_LEIDA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA estado inicial {{$guid}}\",\n  \"estado\": \"LEIDA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ignorar el alias de estado al crear un aviso",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Estado guardado como NO_LEIDA\", () => { const n = pm.response.json(); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.estado).to.eql(\"NO_LEIDA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"COMPRA\",\n  \"canal\": \"APP\",\n  \"mensaje\": \"Postman QA estado inicial {{$guid}}\",\n  \"estadoLectura\": \"LEIDA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 · Entradas, confirmación y SMTP",
+      "description": "",
+      "item": [
+        {
+          "name": "Recibir compra válida, guardar avisos y capturar correo",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Persistencia de la compra y aviso vinculado al comprador\", () => { pm.expect(x.entrada.id_usuario).to.eql(x.data.id_usuario); pm.expect(x.entrada.correo_comprador).to.eql(x.data.correo_comprador); pm.expect(x.avisos.every(n => n.id_usuario === x.data.id_usuario && n.estado_lectura === 'NO_LEIDA')).to.be.true; });",
+                  "pm.test(\"Avisos APP y EMAIL contienen los datos íntegros\", () => { pm.expect(x.avisos.map(n => n.canal).sort()).to.eql(['APP', 'EMAIL']); pm.expect(x.avisos.every(n => n.datos.qr_data === x.data.qr_data && n.datos.nombre_evento === x.data.nombre_evento && n.datos.fecha_evento === x.data.fecha_evento)).to.be.true; });",
+                  "pm.test(\"RabbitMQ publica la confirmación para Entradas\", () => { pm.expect(x.confirmaciones).to.eql([{key:'notificaciones.confirmacion_envio',data:{estado:'en_cola'}}]); });",
+                  "pm.test(\"SMTP contiene destinatario, evento, fecha, hora y QR\", () => { const m = x.smtp[0]; pm.expect(m.destinatario).to.eql(x.data.correo_comprador); for (const dato of [x.data.nombre_evento,x.data.fecha_evento,x.data.hora_evento,x.data.qr_data]) pm.expect(m.contenido).to.include(dato); });",
+                  "pm.test(\"SMTP recibe 1 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(1);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"PostgreSQL conserva los intentos en orden\", () => { pm.expect(x.avisos.find(n => n.canal === 'EMAIL').envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"exitoso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar cada campo obligatorio de compra",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Ocho mensajes incompletos se rechazan sin avisos ni confirmación\", () => { pm.expect(x.length).to.eql(8); pm.expect(x.every(r => r.avisos === 0 && r.confirmaciones === 0 && r.error.includes(r.campo))).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra-invalida",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Correo con un fallo transitorio, luego éxito",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 2 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(2);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"PostgreSQL conserva los intentos en orden\", () => { pm.expect(x.avisos.find(n => n.canal === 'EMAIL').envios.map(e => e.estado)).to.eql([\"ERROR\",\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"transitorio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Correo con fallo persistente y tres intentos totales",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 3 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(3);pm.expect(x.smtp.at(-1).aceptado).to.eql(false); });",
+                  "pm.test(\"PostgreSQL conserva los intentos en orden\", () => { pm.expect(x.avisos.find(n => n.canal === 'EMAIL').envios.map(e => e.estado)).to.eql([\"ERROR\",\"ERROR\",\"ERROR\"]); });",
+                  "pm.test(\"Se conserva el error del intento final\", () => { pm.expect(x.avisos.find(n => n.canal === 'EMAIL').envios.at(-1).error).to.include('fallo SMTP controlado'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"persistente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Compra duplicada consecutiva y después de procesada",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se genera un solo aviso por canal, un correo y una confirmación\", () => { pm.expect(x.avisos.length).to.eql(2);pm.expect(x.smtp.length).to.eql(1);pm.expect(x.confirmaciones.length).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"exitoso\",\n  \"duplicar\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Avisos de compra dentro del sitio (APP)",
+          "description": "Ejecuta las solicitudes en orden. RabbitMQ emite una compra de prueba y el mismo endpoint que usa el frontend comprueba el aviso APP y su destinatario.",
+          "item": [
+            {
+              "name": "Publicar una compra y repetir el evento para probar deduplicación",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('app_compra');",
+                      "pm.collectionVariables.unset('app_compra_id');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const r = pm.response.json();",
+                      "const app = r.avisos.filter(n => n.canal === \"APP\" && n.tipo === \"COMPRA\");",
+                      "pm.test(\"Se genera un aviso APP para el comprador de prueba\", () => { pm.expect(app).to.have.lengthOf(1); pm.expect(app[0].id_usuario).to.eql(r.data.id_usuario); });",
+                      "if (app.length === 1) { pm.collectionVariables.set('app_compra', JSON.stringify(r.data)); pm.collectionVariables.set('app_compra_id', String(app[0].id_notificacion)); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{lab_url}}/__qa/escenarios/compra",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"modo\": \"exitoso\",\n  \"duplicar\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "La campana y el centro reciben una sola notificación de compra sin leer",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const compra = JSON.parse(pm.collectionVariables.get('app_compra'));",
+                      "const avisos = pm.response.json().filter(n => n.datos?.id_evento === compra.id_evento && n.tipo === \"COMPRA\");",
+                      "pm.test(\"El centro devuelve exactamente un aviso APP del evento\", () => { pm.expect(avisos).to.have.lengthOf(1); pm.expect(avisos[0].canal).to.eql(\"APP\"); pm.expect(String(avisos[0].id_notificacion)).to.eql(pm.collectionVariables.get(\"app_compra_id\")); });",
+                      "pm.test(\"Identidad, estado, nombre, fecha, hora y QR corresponden a la compra\", () => { const n = avisos[0]; pm.expect(n.id_usuario).to.eql(compra.id_usuario); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); for (const c of [\"nombre_evento\", \"fecha_evento\", \"hora_evento\", \"qr_data\"]) pm.expect(n.datos[c], c).to.eql(compra[c]); pm.expect(n.mensaje).to.include(compra.nombre_evento); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/eventos"
+              },
+              "response": []
+            },
+            {
+              "name": "El aviso de compra APP se registra como enviado en el primer intento",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "pm.test(\"Los intentos corresponden al aviso APP y se registran en orden\", () => { const intentos = pm.response.json(); pm.expect(intentos.map(e => e.intento)).to.eql([1]); pm.expect(intentos.map(e => e.estado_envio)).to.eql([\"ENVIADO\"]); pm.expect(intentos.every(e => String(e.id_notificacion) === pm.collectionVariables.get(\"app_compra_id\"))).to.be.true; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/{{app_compra_id}}/envios"
+              },
+              "response": []
+            },
+            {
+              "name": "Otra cuenta no ve la compra en su centro",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const compra = JSON.parse(pm.collectionVariables.get('app_compra'));",
+                      "pm.test(\"La compra está ausente para el otro comprador\", () => { pm.expect(pm.response.json().some(n => n.datos?.id_evento === compra.id_evento)).to.be.false; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-b"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/eventos"
+              },
+              "response": []
+            },
+            {
+              "name": "El comprador abre el aviso de compra y lo marca leído",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "pm.test(\"La lectura se aplica al mismo aviso APP\", () => { const n = pm.response.json(); pm.expect(String(n.id_notificacion)).to.eql(pm.collectionVariables.get(\"app_compra_id\")); pm.expect(n.estado_lectura).to.eql(\"LEIDA\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/{{app_compra_id}}/leida"
+              },
+              "response": []
+            },
+            {
+              "name": "El aviso de compra sigue visible como leído al volver a consultar",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const compra = JSON.parse(pm.collectionVariables.get('app_compra'));",
+                      "const avisos = pm.response.json().filter(n => n.datos?.id_evento === compra.id_evento && n.tipo === \"COMPRA\");",
+                      "pm.test(\"El centro devuelve exactamente un aviso APP del evento\", () => { pm.expect(avisos).to.have.lengthOf(1); pm.expect(avisos[0].canal).to.eql(\"APP\"); pm.expect(String(avisos[0].id_notificacion)).to.eql(pm.collectionVariables.get(\"app_compra_id\")); });",
+                      "pm.test(\"Identidad, estado, nombre, fecha, hora y QR corresponden a la compra\", () => { const n = avisos[0]; pm.expect(n.id_usuario).to.eql(compra.id_usuario); pm.expect(n.estado_lectura).to.eql(\"LEIDA\"); for (const c of [\"nombre_evento\", \"fecha_evento\", \"hora_evento\", \"qr_data\"]) pm.expect(n.datos[c], c).to.eql(compra[c]); pm.expect(n.mensaje).to.include(compra.nombre_evento); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/eventos"
+              },
+              "response": []
+            },
+            {
+              "name": "Emitir compra con tres fallos de correo SMTP",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('app_compra_fallo_smtp');",
+                      "pm.collectionVariables.unset('app_compra_fallo_smtp_id');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const r = pm.response.json();",
+                      "const app = r.avisos.filter(n => n.canal === \"APP\" && n.tipo === \"COMPRA\");",
+                      "pm.test(\"Se genera un aviso APP para el comprador de prueba\", () => { pm.expect(app).to.have.lengthOf(1); pm.expect(app[0].id_usuario).to.eql(r.data.id_usuario); });",
+                      "if (app.length === 1) { pm.collectionVariables.set('app_compra_fallo_smtp', JSON.stringify(r.data)); pm.collectionVariables.set('app_compra_fallo_smtp_id', String(app[0].id_notificacion)); }",
+                      "pm.test(\"El registro de EMAIL termina en ERROR\", () => { const email = r.avisos.find(n => n.canal === \"EMAIL\"); pm.expect(email.envios.map(e => e.estado)).to.eql([\"ERROR\", \"ERROR\", \"ERROR\"]); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{lab_url}}/__qa/escenarios/compra",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"modo\": \"persistente\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "El aviso APP aparece en el sitio aunque falle el correo",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const compra = JSON.parse(pm.collectionVariables.get('app_compra_fallo_smtp'));",
+                      "const avisos = pm.response.json().filter(n => n.datos?.id_evento === compra.id_evento && n.tipo === \"COMPRA\");",
+                      "pm.test(\"El centro devuelve exactamente un aviso APP del evento\", () => { pm.expect(avisos).to.have.lengthOf(1); pm.expect(avisos[0].canal).to.eql(\"APP\"); pm.expect(String(avisos[0].id_notificacion)).to.eql(pm.collectionVariables.get(\"app_compra_fallo_smtp_id\")); });",
+                      "pm.test(\"Identidad, estado, nombre, fecha, hora y QR corresponden a la compra\", () => { const n = avisos[0]; pm.expect(n.id_usuario).to.eql(compra.id_usuario); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); for (const c of [\"nombre_evento\", \"fecha_evento\", \"hora_evento\", \"qr_data\"]) pm.expect(n.datos[c], c).to.eql(compra[c]); pm.expect(n.mensaje).to.include(compra.nombre_evento); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/eventos"
+              },
+              "response": []
+            },
+            {
+              "name": "El envío APP queda registrado aunque falle el correo",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "pm.test(\"Los intentos corresponden al aviso APP y se registran en orden\", () => { const intentos = pm.response.json(); pm.expect(intentos.map(e => e.intento)).to.eql([1]); pm.expect(intentos.map(e => e.estado_envio)).to.eql([\"ENVIADO\"]); pm.expect(intentos.every(e => String(e.id_notificacion) === pm.collectionVariables.get(\"app_compra_fallo_smtp_id\"))).to.be.true; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/{{app_compra_fallo_smtp_id}}/envios"
+              },
+              "response": []
+            },
+            {
+              "name": "Emitir compra con un fallo inicial del canal APP",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('app_compra_reintento');",
+                      "pm.collectionVariables.unset('app_compra_reintento_id');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const r = pm.response.json();",
+                      "const app = r.avisos.filter(n => n.canal === \"APP\" && n.tipo === \"COMPRA\");",
+                      "pm.test(\"Se genera un aviso APP para el comprador de prueba\", () => { pm.expect(app).to.have.lengthOf(1); pm.expect(app[0].id_usuario).to.eql(r.data.id_usuario); });",
+                      "if (app.length === 1) { pm.collectionVariables.set('app_compra_reintento', JSON.stringify(r.data)); pm.collectionVariables.set('app_compra_reintento_id', String(app[0].id_notificacion)); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{lab_url}}/__qa/escenarios/compra",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"modo\": \"exitoso\",\n  \"compraAppFallos\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "El aviso APP se reintenta y se detiene tras el primer éxito",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "pm.test(\"Los intentos corresponden al aviso APP y se registran en orden\", () => { const intentos = pm.response.json(); pm.expect(intentos.map(e => e.intento)).to.eql([1,2]); pm.expect(intentos.map(e => e.estado_envio)).to.eql([\"ERROR\",\"ENVIADO\"]); pm.expect(intentos.every(e => String(e.id_notificacion) === pm.collectionVariables.get(\"app_compra_reintento_id\"))).to.be.true; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/{{app_compra_reintento_id}}/envios"
+              },
+              "response": []
+            },
+            {
+              "name": "El sitio muestra un solo aviso después del reintento APP",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const compra = JSON.parse(pm.collectionVariables.get('app_compra_reintento'));",
+                      "const avisos = pm.response.json().filter(n => n.datos?.id_evento === compra.id_evento && n.tipo === \"COMPRA\");",
+                      "pm.test(\"El centro devuelve exactamente un aviso APP del evento\", () => { pm.expect(avisos).to.have.lengthOf(1); pm.expect(avisos[0].canal).to.eql(\"APP\"); pm.expect(String(avisos[0].id_notificacion)).to.eql(pm.collectionVariables.get(\"app_compra_reintento_id\")); });",
+                      "pm.test(\"Identidad, estado, nombre, fecha, hora y QR corresponden a la compra\", () => { const n = avisos[0]; pm.expect(n.id_usuario).to.eql(compra.id_usuario); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); for (const c of [\"nombre_evento\", \"fecha_evento\", \"hora_evento\", \"qr_data\"]) pm.expect(n.datos[c], c).to.eql(compra[c]); pm.expect(n.mensaje).to.include(compra.nombre_evento); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/eventos"
+              },
+              "response": []
+            },
+            {
+              "name": "Emitir compra con tres fallos del canal APP",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('app_compra_error');",
+                      "pm.collectionVariables.unset('app_compra_error_id');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "const r = pm.response.json();",
+                      "const app = r.avisos.filter(n => n.canal === \"APP\" && n.tipo === \"COMPRA\");",
+                      "pm.test(\"Se genera un aviso APP para el comprador de prueba\", () => { pm.expect(app).to.have.lengthOf(1); pm.expect(app[0].id_usuario).to.eql(r.data.id_usuario); });",
+                      "if (app.length === 1) { pm.collectionVariables.set('app_compra_error', JSON.stringify(r.data)); pm.collectionVariables.set('app_compra_error_id', String(app[0].id_notificacion)); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{lab_url}}/__qa/escenarios/compra",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"modo\": \"exitoso\",\n  \"compraAppFallos\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "El fallo definitivo de APP queda registrado tras tres intentos",
+              "protocolProfileBehavior": {
+                "disableCookies": true
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => { pm.response.to.have.status(200); });",
+                      "pm.test(\"Los intentos corresponden al aviso APP y se registran en orden\", () => { const intentos = pm.response.json(); pm.expect(intentos.map(e => e.intento)).to.eql([1,2,3]); pm.expect(intentos.map(e => e.estado_envio)).to.eql([\"ERROR\",\"ERROR\",\"ERROR\"]); pm.expect(intentos.every(e => String(e.id_notificacion) === pm.collectionVariables.get(\"app_compra_error_id\"))).to.be.true; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "jwt=qa-comprador-a"
+                  }
+                ],
+                "url": "{{lab_url}}/api/notificaciones/{{app_compra_error_id}}/envios"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Recordatorios",
+      "description": "",
+      "item": [
+        {
+          "name": "Límite justo antes, exactamente y después de 24 h",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"A más de 24 h se programa y desde el límite se envía de inmediato\", () => { pm.expect(x.map(r => r.inmediato)).to.eql([false,true,true]);pm.expect(x.every(r => r.programado === '2030-01-14T12:00:00.000Z')).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/limites-24h",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "El temporizador genera y guarda el aviso cuando vence",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"El aviso nace al vencer, se guarda y se entrega\", () => { pm.expect(x.antes).to.eql(0); pm.expect(x.inicioCorrecto).to.be.true; pm.expect(x.avisos.map(n => n.tipo)).to.eql([\"RECORDATORIO_24H\"]); pm.expect(x.avisos[0].envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/vencimiento-recordatorio",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Compra a 48 h programa el aviso y no lo entrega antes",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Queda una fecha programada y solo aparecen avisos de compra\", () => { pm.expect(x.programacion).to.be.a('string'); pm.expect(x.avisos.map(n => n.tipo)).to.eql([\"COMPRA\",\"COMPRA\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offsetHoras\": 48\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Compra 2 h antes genera y guarda el recordatorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "const aviso = x.avisos.find(n => n.tipo === 'RECORDATORIO_24H');",
+                  "pm.collectionVariables.set('recordatorio_id', String(aviso?.id_notificacion)); pm.collectionVariables.set('recordatorio_evento', x.data.id_evento);",
+                  "pm.test(\"Aviso APP inmediato, sin leer y para el comprador\", () => { pm.expect(x.programacion).to.eql(null);pm.expect(aviso.id_usuario).to.eql(\"qa-comprador-a\");pm.expect(aviso.estado_lectura).to.eql(\"NO_LEIDA\");pm.expect(aviso.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offsetHoras\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Compra 23 h antes genera y guarda el recordatorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "const aviso = x.avisos.find(n => n.tipo === 'RECORDATORIO_24H');",
+                  "pm.collectionVariables.set('recordatorio_id', String(aviso?.id_notificacion)); pm.collectionVariables.set('recordatorio_evento', x.data.id_evento);",
+                  "pm.test(\"Aviso APP inmediato, sin leer y para el comprador\", () => { pm.expect(x.programacion).to.eql(null);pm.expect(aviso.id_usuario).to.eql(\"qa-comprador-a\");pm.expect(aviso.estado_lectura).to.eql(\"NO_LEIDA\");pm.expect(aviso.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offsetHoras\": 23\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "El comprador puede ver el recordatorio persistido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"El recordatorio está en el centro de A\", () => { pm.expect(lista.some(n => String(n.id_notificacion) === pm.collectionVariables.get('recordatorio_id') && n.tipo === 'RECORDATORIO_24H')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-a"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Un usuario sin entrada no recibe el recordatorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json();",
+                  "pm.test(\"B no recibe recordatorios del evento ajeno\", () => { pm.expect(lista.some(n => n.datos.id_evento === pm.collectionVariables.get('recordatorio_evento'))).to.be.false; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "B no puede consultar el recordatorio de A",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-comprador-b"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/{{recordatorio_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Canal de recordatorio con 1 fallo(s)",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Los intentos quedan registrados y se detienen al enviar\", () => { pm.expect(x.avisos.find(n => n.tipo === 'RECORDATORIO_24H').envios.map(e => e.estado)).to.eql([\"ERROR\",\"ENVIADO\"]); });",
+                  "pm.test(\"El fallo conserva la causa\", () => { pm.expect(x.avisos.find(n => n.tipo === 'RECORDATORIO_24H').envios[0].error).to.include('fallo controlado'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offsetHoras\": 2,\n  \"recordatorioFallos\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Canal de recordatorio con 3 fallo(s)",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Los intentos quedan registrados y se detienen al enviar\", () => { pm.expect(x.avisos.find(n => n.tipo === 'RECORDATORIO_24H').envios.map(e => e.estado)).to.eql([\"ERROR\",\"ERROR\",\"ERROR\"]); });",
+                  "pm.test(\"El fallo conserva la causa\", () => { pm.expect(x.avisos.find(n => n.tipo === 'RECORDATORIO_24H').envios[0].error).to.include('fallo controlado'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offsetHoras\": 2,\n  \"recordatorioFallos\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 · Panel, destinatarios y organizador",
+      "description": "",
+      "item": [
+        {
+          "name": "Reprogramación y mensaje duplicado",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "const resumen = x.avisos.find(n => n.id_usuario === 'qa-organizador'); const compradores = x.avisos.filter(n => n.id_usuario !== 'qa-organizador');",
+                  "pm.test(\"Un aviso entregado para cada comprador afectado\", () => { pm.expect(compradores.map(n => n.id_usuario).sort()).to.eql([\"qa-comprador-a\",\"qa-comprador-b\"]);pm.expect(compradores.every(n => n.tipo === \"CAMBIO_EVENTO\" && n.envios.at(-1).estado === 'ENVIADO')).to.eql(true); });",
+                  "pm.test(\"El resumen del organizador informa el resultado real\", () => { pm.expect(resumen.datos.usuarios_notificados).to.eql(2);pm.expect(resumen.datos.usuarios_faltantes).to.eql(0);pm.expect(resumen.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });",
+                  "pm.test(\"Los avisos quedaron en PostgreSQL con los datos del evento\", () => { pm.expect(compradores.every(n => n.datos.id_evento === x.data.id_evento && n.datos.nuevo_estado === x.data.nuevo_estado.toLowerCase())).to.be.true; });",
+                  "pm.test(\"Se usa la nueva fecha y hora\", () => { pm.expect(compradores.every(n => n.datos.fecha_evento === x.data.fecha_cambio && n.datos.hora_evento === x.data.hora_cambio)).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_reprogramado\",\n  \"duplicar\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelación a compradores y confirmación al organizador",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "const resumen = x.avisos.find(n => n.id_usuario === 'qa-organizador'); const compradores = x.avisos.filter(n => n.id_usuario !== 'qa-organizador');",
+                  "pm.test(\"Un aviso entregado para cada comprador afectado\", () => { pm.expect(compradores.map(n => n.id_usuario).sort()).to.eql([\"qa-comprador-a\",\"qa-comprador-b\"]);pm.expect(compradores.every(n => n.tipo === \"CANCELACION_EVENTO\" && n.envios.at(-1).estado === 'ENVIADO')).to.eql(true); });",
+                  "pm.test(\"El resumen del organizador informa el resultado real\", () => { pm.expect(resumen.datos.usuarios_notificados).to.eql(2);pm.expect(resumen.datos.usuarios_faltantes).to.eql(0);pm.expect(resumen.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });",
+                  "pm.test(\"Los avisos quedaron en PostgreSQL con los datos del evento\", () => { pm.expect(compradores.every(n => n.datos.id_evento === x.data.id_evento && n.datos.nuevo_estado === x.data.nuevo_estado.toLowerCase())).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_actualizado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evento de Panel incompleto",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Rechazo sin avisos\", () => { pm.expect(x.avisos.length).to.eql(0);pm.expect(x.error).to.include('id_usuario'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"invalido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Panel rechaza hora_cambio inválido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Rechazo sin avisos\", () => { pm.expect(x.avisos.length).to.eql(0); pm.expect(x.error).to.include(\"hora_cambio\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"invalido\",\n  \"campoInvalido\": \"hora_cambio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Panel rechaza fecha_cambio inválido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Rechazo sin avisos\", () => { pm.expect(x.avisos.length).to.eql(0); pm.expect(x.error).to.include(\"fecha_cambio\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"invalido\",\n  \"campoInvalido\": \"fecha_cambio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Panel rechaza nuevo_estado inválido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Rechazo sin avisos\", () => { pm.expect(x.avisos.length).to.eql(0); pm.expect(x.error).to.include(\"nuevo_estado\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"invalido\",\n  \"campoInvalido\": \"nuevo_estado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Panel rechaza id_evento inválido",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Rechazo sin avisos\", () => { pm.expect(x.avisos.length).to.eql(0); pm.expect(x.error).to.include(\"id_evento\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"invalido\",\n  \"campoInvalido\": \"id_evento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fallos de compradores y del aviso al organizador",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Cada destinatario mantiene sus propios tres intentos o éxito temprano\", () => { const r = id => x.avisos.find(n => n.id_usuario === id).envios.map(e => e.estado); pm.expect(r('qa-comprador-a')).to.eql([\"ERROR\",\"ERROR\",\"ERROR\"]);pm.expect(r('qa-comprador-b')).to.eql([\"ERROR\",\"ENVIADO\"]);pm.expect(r('qa-organizador')).to.eql([\"ERROR\",\"ERROR\",\"ERROR\"]); });",
+                  "pm.test(\"Se conserva el error final e informa un comprador pendiente\", () => { const r = x.avisos.find(n => n.id_usuario === 'qa-organizador'); pm.expect(r.datos.usuarios_notificados).to.eql(1);pm.expect(r.datos.usuarios_faltantes).to.eql(1);pm.expect(r.envios.at(-1).error).to.include('fallo controlado'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"fallos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fallo transitorio al avisar al organizador",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Segundo intento exitoso detiene el envío\", () => { pm.expect(x.avisos.find(n=>n.id_usuario==='qa-organizador').envios.map(e=>e.estado)).to.eql([\"ERROR\",\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"organizador-transitorio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reprogramar un evento sin compradores",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.collectionVariables.set('evento_sin_compradores', x.data.id_evento);",
+                  "pm.test(\"Un aviso APP para el organizador con el mensaje exacto\", () => { pm.expect(x.avisos).to.have.lengthOf(1); const n = x.avisos[0]; pm.expect(n.id_usuario).to.eql(\"qa-organizador\"); pm.expect(n.canal).to.eql(\"APP\"); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.mensaje).to.eql(\"No se encuentran compradores para este evento.\"); pm.expect(n.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo\": \"sin-compradores\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Comprueba que un evento sin entradas genera únicamente un aviso APP para el organizador."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar un evento sin compradores",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.collectionVariables.set('evento_sin_compradores', x.data.id_evento);",
+                  "pm.test(\"Un aviso APP para el organizador con el mensaje exacto\", () => { pm.expect(x.avisos).to.have.lengthOf(1); const n = x.avisos[0]; pm.expect(n.id_usuario).to.eql(\"qa-organizador\"); pm.expect(n.canal).to.eql(\"APP\"); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.mensaje).to.eql(\"No se encuentran compradores para este evento.\"); pm.expect(n.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_actualizado\",\n  \"modo\": \"sin-compradores\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Comprueba que un evento sin entradas genera únicamente un aviso APP para el organizador."
+          },
+          "response": []
+        },
+        {
+          "name": "Reprogramar un evento con entradas inactivas",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.collectionVariables.set('evento_sin_compradores', x.data.id_evento);",
+                  "pm.test(\"Un aviso APP para el organizador con el mensaje exacto\", () => { pm.expect(x.avisos).to.have.lengthOf(1); const n = x.avisos[0]; pm.expect(n.id_usuario).to.eql(\"qa-organizador\"); pm.expect(n.canal).to.eql(\"APP\"); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.mensaje).to.eql(\"No se encuentran compradores para este evento.\"); pm.expect(n.envios.map(e => e.estado)).to.eql([\"ENVIADO\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_reprogramado\",\n  \"modo\": \"entradas-inactivas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El organizador recibe el mismo aviso cuando solo hay entradas inactivas."
+          },
+          "response": []
+        },
+        {
+          "name": "El aviso sin compradores aparece en el centro del organizador",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El centro muestra el mensaje y conserva el ID del evento\", () => { const id = pm.collectionVariables.get(\"evento_sin_compradores\"); const n = pm.response.json().find(a => a.datos?.id_evento === id); pm.expect(n).to.exist; pm.expect(n.mensaje).to.eql(\"No se encuentran compradores para este evento.\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "jwt=qa-organizador"
+              }
+            ],
+            "url": "{{lab_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Evento pasado · evento_reprogramado",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se omite el envío a compradores y organizador\", () => { pm.expect(x.avisos.length).to.eql(0);pm.expect(x.error).to.include('ya inició o finalizó'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_reprogramado\",\n  \"modo\": \"pasado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evento pasado · evento_actualizado",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se omite el envío a compradores y organizador\", () => { pm.expect(x.avisos.length).to.eql(0);pm.expect(x.error).to.include('ya inició o finalizó'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_actualizado\",\n  \"modo\": \"pasado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reprogramación cambia el horario del recordatorio pendiente",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se reemplaza por un horario 24 h antes de la nueva fecha\", () => { const esperado = new Date(Date.parse(x.data.fecha_cambio+'T'+x.data.hora_cambio+'Z') - 86400000).toISOString(); pm.expect(x.programacionAntes).to.be.a('string'); pm.expect(x.programacionDespues).to.eql(esperado); pm.expect(x.programacionAntes).not.to.eql(esperado); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_reprogramado\",\n  \"modo\": \"calendario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelación bloquea la ejecución de recordatorio pendiente",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"La función programada no crea aviso y se conserva la cancelación\", () => { pm.expect(x.programacionAntes).to.be.a('string'); pm.expect(x.avisos.some(n => n.tipo === 'RECORDATORIO_24H')).to.be.false; pm.expect(x.filas.every(r => r.estado_evento === 'CANCELADO')).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"evento_actualizado\",\n  \"modo\": \"calendario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 · Eventos de Auth y correo",
+      "description": "",
+      "item": [
+        {
+          "name": "recuperacion_cuenta · exitoso",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 1 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(1);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"exitoso\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data).not.to.have.property('error_envio'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"exitoso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · transitorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 2 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(2);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"exitoso\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data).not.to.have.property('error_envio'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"transitorio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · persistente",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 3 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(3);pm.expect(x.smtp.at(-1).aceptado).to.eql(false); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"error\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data.error_envio).to.include('después de 3'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"persistente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · Falta enlace obligatorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0);pm.expect(x.error).to.include('url'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"url\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · Rechazar id_usuario",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0); pm.expect(x.error).to.include(\"id_usuario\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"id_usuario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · Rechazar protocolo",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0); pm.expect(x.error).to.include(\"url\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"protocolo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recuperacion_cuenta · Rechazar email_destino",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0); pm.expect(x.error).to.include(\"email_destino\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"recuperacion_cuenta\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"email_destino\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · exitoso",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 1 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(1);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"exitoso\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data).not.to.have.property('error_envio'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"exitoso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · transitorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 2 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(2);pm.expect(x.smtp.at(-1).aceptado).to.eql(true); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"exitoso\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data).not.to.have.property('error_envio'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"transitorio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · persistente",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"SMTP recibe 3 intento(s) y registra el resultado final\", () => { pm.expect(x.smtp.length).to.eql(3);pm.expect(x.smtp.at(-1).aceptado).to.eql(false); });",
+                  "pm.test(\"El correo conserva destinatario y enlace de Auth\", () => { pm.expect(x.smtp.every(m => m.destinatario === x.data.email_destino && m.contenido.includes(x.data.url))).to.be.true; });",
+                  "pm.test(\"Confirmación de éxito o error en notificaciones.events/correo_auth\", () => { pm.expect(x.confirmacion.key).to.eql(\"correo_auth\");pm.expect(x.confirmacion.data.estado_envio).to.eql(\"error\");pm.expect(x.confirmacion.data.email_destino).to.eql(x.data.email_destino); pm.expect(x.confirmacion.data.error_envio).to.include('después de 3'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"persistente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · Falta enlace obligatorio",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0);pm.expect(x.error).to.include('url'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"url\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · Rechazar protocolo",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0); pm.expect(x.error).to.include(\"url\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"protocolo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cuenta_staff · Rechazar email_destino",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Se rechaza y no se llama a SMTP\", () => { pm.expect(x.smtp.length).to.eql(0); pm.expect(x.error).to.include(\"email_destino\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/auth",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"cuenta_staff\",\n  \"modo\": \"exitoso\",\n  \"campoInvalido\": \"email_destino\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 · Entrega 3, carga progresiva",
+      "description": "Pruebas cortas sobre el stack aislado. Los tamaños y el umbral se definen en el entorno.",
+      "item": [
+        {
+          "name": "Centro simultáneo y capacidad general",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"centro\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validaciones Auth concurrentes",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"sesion\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Marcar y eliminar lotes en paralelo",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"masivas\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ráfaga RabbitMQ y persistencia",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"rafaga\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recordatorios concurrentes",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"recordatorios\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Correo masivo con reintentos",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Todas las solicitudes son válidas y están dentro del umbral de cada etapa\", () => { pm.expect(x.length).to.be.at.least(1); for (const e of x) { pm.expect(e.correctas, JSON.stringify(e)).to.eql(e.cantidad); pm.expect(e.ms, JSON.stringify(e)).to.be.at.most(e.maxMs); } });",
+                  "console.log('Carga: ' + JSON.stringify(x));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/carga",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modo\":\"correos\",\"cantidades\":{{carga_etapas}},\"maxMs\":{{carga_max_ms}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelación con muchos compradores",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const x = pm.response.json();",
+                  "pm.test(\"Sin duplicados, todos los compradores reciben aviso y el organizador recibe un resumen\", () => { const clientes = x.avisos.filter(r => r.id_usuario !== 'qa-organizador'); pm.expect(new Set(clientes.map(r=>r.id_usuario)).size).to.eql(x.compradores.length); pm.expect(clientes.length).to.eql(x.compradores.length); pm.expect(clientes.every(r=>r.envios.at(-1).estado==='ENVIADO')).to.be.true; const o=x.avisos.find(r=>r.id_usuario==='qa-organizador'); pm.expect(o.datos.usuarios_faltantes).to.eql(0); });",
+                  "pm.test(\"La entrega completa cabe en el umbral de laboratorio\", () => { pm.expect(pm.response.responseTime).to.be.at.most(Number(pm.environment.get('carga_max_ms'))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lab_url}}/__qa/escenarios/panel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"evento_actualizado\",\"cantidad\":{{carga_panel_compradores}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 · Gateway de la integración local",
+      "description": "",
+      "item": [
+        {
+          "name": "Gateway registra Auth y Notificaciones",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Las dos rutas están configuradas\", () => { const routes=pm.response.json().routes; for(const name of ['auth','notificaciones']) pm.expect(routes.some(r=>r.module===name&&r.configured)).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{gateway_url}}/health"
+          },
+          "response": []
+        },
+        {
+          "name": "Centro protegido detrás del Gateway",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"El backend protegido responde sin datos de terceros\", () => { pm.expect(pm.response.json().error).to.eql('unauthorized'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{gateway_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 · Compra gratuita y pagada con Entradas real",
+      "description": "Flujos optativos que escriben datos y pueden enviar correo al buzón QA. Ejecuta esta carpeta solo con el entorno de integración local, datos de prueba y ejecutar_e2e=true.",
+      "item": [
+        {
+          "name": "Iniciar sesión como comprador QA",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "['e2e_cookie','e2e_usuario','e2e_desde','e2e_reserva'].forEach(k => pm.collectionVariables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const cookie = pm.response.headers.all().find(h => h.key.toLowerCase() === 'set-cookie' && h.value.startsWith('jwt='));",
+                  "pm.test(\"Auth devuelve cookie JWT\", () => { pm.expect(cookie).to.exist; });",
+                  "if (cookie) { pm.collectionVariables.set('e2e_cookie', cookie.value.split(';')[0]); pm.collectionVariables.set('e2e_desde', new Date().toISOString()); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{gateway_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{comprador_email}}\",\n  \"password\": \"{{comprador_password}}\",\n  \"admin\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar sesión del comprador",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const u=pm.response.json().usuario;",
+                  "pm.test(\"Identidad válida de comprador\", () => { pm.expect(u.id_usuario).to.be.a('string'); pm.expect(u.rol).to.eql('usuario'); });",
+                  "pm.collectionVariables.set('e2e_usuario',u.id_usuario);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              }
+            ],
+            "url": "{{gateway_url}}/api/auth/validar-sesion"
+          },
+          "response": []
+        },
+        {
+          "name": "Emitir gratuita por ruta autenticada de Entradas",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Se consolida la compra gratuita\", () => { pm.expect(pm.response.json().estado_pago).to.eql(\"GRATUITA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{gateway_url}}/api/entradas/procesar-compra",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_evento\": \"{{evento_gratuito_id}}\",\n  \"tipo_entrada\": \"GRATUITA\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar el aviso APP y el QR de la compra gratuita en el centro",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const idEvento = pm.environment.get(\"evento_gratuito_id\");",
+                  "const idUsuario = pm.collectionVariables.get('e2e_usuario');",
+                  "const inicio = Date.parse(pm.collectionVariables.get('e2e_desde'));",
+                  "function delEvento(lista) { return lista.find(n => n.tipo === 'COMPRA' && n.id_usuario === idUsuario && n.datos?.id_evento === idEvento && Date.parse(n.created_at) >= inicio); }",
+                  "function verificar(n) { pm.test(\"El comprador ve su aviso APP de compra en el centro\", () => { pm.expect(n).to.exist; pm.expect(n.canal).to.eql(\"APP\"); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.id_usuario).to.eql(idUsuario); pm.expect(n.datos.id_evento).to.eql(idEvento); pm.expect(n.datos.nombre_evento).to.be.a(\"string\").and.not.empty; pm.expect(n.datos.qr_data).to.be.a(\"string\").and.not.empty; }); }",
+                  "function consultar(restantes) { pm.sendRequest({url: pm.environment.get('gateway_url') + '/api/notificaciones/eventos', header:{Cookie: pm.collectionVariables.get('e2e_cookie')}}, (err,res) => { const aviso = !err && res.code === 200 && delEvento(res.json()); if (aviso || restantes === 0) verificar(aviso); else setTimeout(() => consultar(restantes - 1), 500); }); }",
+                  "const aviso = delEvento(pm.response.json()); if (aviso) verificar(aviso); else consultar(12);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              }
+            ],
+            "url": "{{gateway_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Reservar una entrada pagada",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const resp=pm.response.json(); const reserva = resp.id_reserva ?? resp.holdId;",
+                  "pm.test(\"Entradas devuelve la reserva\", () => { pm.expect(reserva).to.be.a('string'); });",
+                  "if(reserva) pm.collectionVariables.set('e2e_reserva', reserva);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{gateway_url}}/api/entradas/reservas/hold",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_evento\": \"{{evento_pagado_id}}\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirmar pago simulado y emitir ticket",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }",
+                  "if (!pm.collectionVariables.get('e2e_reserva')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Entradas emite al menos un ticket\", () => { pm.expect(pm.response.json().entradas_emitidas).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              }
+            ],
+            "url": "{{gateway_url}}/api/entradas/reservas/{{e2e_reserva}}/webhook-pago"
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar el aviso APP y el QR de la compra pagada en el centro",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const idEvento = pm.environment.get(\"evento_pagado_id\");",
+                  "const idUsuario = pm.collectionVariables.get('e2e_usuario');",
+                  "const inicio = Date.parse(pm.collectionVariables.get('e2e_desde'));",
+                  "function delEvento(lista) { return lista.find(n => n.tipo === 'COMPRA' && n.id_usuario === idUsuario && n.datos?.id_evento === idEvento && Date.parse(n.created_at) >= inicio); }",
+                  "function verificar(n) { pm.test(\"El comprador ve su aviso APP de compra en el centro\", () => { pm.expect(n).to.exist; pm.expect(n.canal).to.eql(\"APP\"); pm.expect(n.estado_lectura).to.eql(\"NO_LEIDA\"); pm.expect(n.id_usuario).to.eql(idUsuario); pm.expect(n.datos.id_evento).to.eql(idEvento); pm.expect(n.datos.nombre_evento).to.be.a(\"string\").and.not.empty; pm.expect(n.datos.qr_data).to.be.a(\"string\").and.not.empty; }); }",
+                  "function consultar(restantes) { pm.sendRequest({url: pm.environment.get('gateway_url') + '/api/notificaciones/eventos', header:{Cookie: pm.collectionVariables.get('e2e_cookie')}}, (err,res) => { const aviso = !err && res.code === 200 && delEvento(res.json()); if (aviso || restantes === 0) verificar(aviso); else setTimeout(() => consultar(restantes - 1), 500); }); }",
+                  "const aviso = delEvento(pm.response.json()); if (aviso) verificar(aviso); else consultar(12);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              }
+            ],
+            "url": "{{gateway_url}}/api/notificaciones/eventos"
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar sesión de Postman",
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('ejecutar_e2e') !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!pm.environment.get('comprador_email') || !pm.environment.get('comprador_password') || !pm.environment.get('evento_gratuito_id') || !pm.environment.get('evento_pagado_id')) { throw new Error('Completa la cuenta QA y ambos IDs en el entorno antes de ejecutar el E2E'); }",
+                  "if (!pm.collectionVariables.get('e2e_cookie')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Se cierra la sesión\", () => { pm.expect(pm.response.code).to.be.oneOf([200,204]); });",
+                  "['e2e_cookie','e2e_usuario','e2e_desde','e2e_reserva'].forEach(k=>pm.collectionVariables.unset(k));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "{{e2e_cookie}}"
+              }
+            ],
+            "url": "{{gateway_url}}/api/auth/logout"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

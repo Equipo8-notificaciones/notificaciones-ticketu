@@ -1,0 +1,69 @@
+name: ticketu-notificaciones-postaman
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: notificaciones_qa
+      POSTGRES_USER: qa
+      POSTGRES_PASSWORD: qa_local
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ../backend/supabase/schema.sql:/docker-entrypoint-initdb.d/01-notificaciones.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U qa -d notificaciones_qa']
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: qa
+      RABBITMQ_DEFAULT_PASS: qa_local
+      RABBITMQ_DEFAULT_VHOST: ticketu
+    tmpfs:
+      - /var/lib/rabbitmq/mnesia
+    healthcheck:
+      test: [CMD-SHELL, 'rabbitmq-diagnostics -q check_running']
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  laboratorio:
+    build:
+      context: ../backend
+    command: [node, /app/postaman/laboratorio.cjs]
+    volumes:
+      - ./laboratorio.cjs:/app/postaman/laboratorio.cjs:ro
+    environment:
+      NODE_ENV: production
+      TZ: UTC
+      PORT: '3000'
+      DATABASE_URL: postgresql://qa:qa_local@postgres:5432/notificaciones_qa
+      DB_SSL: 'false'
+      BROKER_MODE: rabbitmq
+      BROKER_URL: amqp://qa:qa_local@rabbit:5672/ticketu
+      AUTH_SERVICE_URL: http://127.0.0.1:3092
+      AUTH_TIMEOUT_MS: '150'
+      INTERNAL_API_KEY: clave-exclusiva-del-laboratorio
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: '2525'
+      SMTP_SECURE: 'false'
+      SMTP_USER: smtp-qa
+      SMTP_PASS: smtp-local
+      SMTP_FROM: notificaciones@ticketu.test
+      FRONTEND_ORIGIN: http://localhost:3000
+    ports:
+      - '127.0.0.1:3091:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/__qa/listo').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 4s
+      retries: 30
