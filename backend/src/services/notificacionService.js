@@ -20,7 +20,7 @@ class NotificacionService {
             usuarioId: String(usuarioId).trim(),
             tipo,
             canal,
-            estado: datos.estado || EstadosNotificacion.NO_LEIDA
+            estadoLectura: EstadosNotificacion.NO_LEIDA
         }));
     }
 

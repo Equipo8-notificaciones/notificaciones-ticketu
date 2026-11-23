@@ -45,8 +45,10 @@ async function procesarEventoPanel({
     horaCambio,
     reprogramado
 }) {
-    const { fecha_evento: fechaEventoDb, es_futuro: eventoFuturo } =
-        await entradasService.obtenerFechaEvento(idEvento);
+    const fechaRegistrada = await entradasService.obtenerFechaEvento(idEvento);
+    if (!fechaRegistrada) return notificarOrganizador(idUsuario, idEvento, 0, 0);
+
+    const { fecha_evento: fechaEventoDb, es_futuro: eventoFuturo } = fechaRegistrada;
     const fechaEvento = new Date(fechaEventoDb);
     if (Number.isNaN(fechaEvento.getTime())) {
         throw new Error(`La fecha_evento almacenada para el evento ${idEvento} no es válida.`);
@@ -131,18 +133,7 @@ async function procesarEventoPanel({
         }
     }
 
-    const totalUsuarios = destinatarios.size;
-    const faltantes = totalUsuarios - notificados.length;
-    const resultado = {
-        id_evento: idEvento,
-        nuevo_estado: totalUsuarios > 0 && notificados.length / totalUsuarios > 0.6 ? 'exito' : 'error',
-        usuarios_notificados: notificados.length,
-        usuarios_faltantes: faltantes,
-        fecha_envio: new Date().toISOString()
-    };
-
-    await notificarOrganizador(idUsuario, resultado);
-    return resultado;
+    return notificarOrganizador(idUsuario, idEvento, destinatarios.size, notificados.length);
 }
 
 function validarEvento(evento, reprogramado) {
@@ -192,18 +183,30 @@ function crearMensaje({ idEvento, estado, fechaCambio, horaCambio, reprogramado 
     return `El estado del evento ${idEvento} cambió a ${estado}.`;
 }
 
-async function notificarOrganizador(idUsuario, resultado) {
-    const mensaje = `Proceso de notificaciones del evento ${resultado.id_evento}: ${resultado.nuevo_estado}. ` +
-        `Usuarios notificados: ${resultado.usuarios_notificados}; usuarios faltantes: ${resultado.usuarios_faltantes}.`;
+async function notificarOrganizador(idUsuario, idEvento, totalUsuarios, usuariosNotificados) {
+    const sinCompradores = totalUsuarios === 0;
+    const resultado = {
+        id_evento: idEvento,
+        nuevo_estado: sinCompradores || usuariosNotificados / totalUsuarios > 0.6 ? 'exito' : 'error',
+        usuarios_notificados: usuariosNotificados,
+        usuarios_faltantes: totalUsuarios - usuariosNotificados,
+        fecha_envio: new Date().toISOString()
+    };
+    let mensaje = 'No se encuentran compradores para este evento.';
+    if (!sinCompradores) {
+        const estado = resultado.nuevo_estado === 'exito'
+            ? 'El envío se realizó correctamente.'
+            : 'El envío no se completó correctamente.';
+        mensaje = `${estado} Proceso de notificaciones del evento ${idEvento}: ${resultado.nuevo_estado}. ` +
+            `Usuarios notificados: ${usuariosNotificados}; usuarios faltantes: ${resultado.usuarios_faltantes}.`;
+    }
     try {
         const notificacion = await notificacionService.crearNotificacion({
             id_usuario: idUsuario,
             tipo: 'CAMBIO_EVENTO',
             canal: 'APP',
-            mensaje: resultado.nuevo_estado === 'exito'
-                ? `El envío se realizó correctamente. ${mensaje}`
-                : `El envío no se completó correctamente. ${mensaje}`,
-            datos: resultado
+            mensaje,
+            datos: sinCompradores ? { id_evento: idEvento, fecha_envio: resultado.fecha_envio } : resultado
         });
         await notificacionService.enviarConReintentos(
             notificacion.id_notificacion,
@@ -214,6 +217,7 @@ async function notificarOrganizador(idUsuario, resultado) {
     } catch (error) {
         console.error(`[panelEventoHandler] No se pudo confirmar el resultado a ${idUsuario}:`, error.message);
     }
+    return resultado;
 }
 
 module.exports = { manejarEventoActualizado, manejarEventoReprogramado };

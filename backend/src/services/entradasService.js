@@ -26,10 +26,7 @@ async function obtenerFechaEvento(idEvento) {
          ORDER BY fecha_evento DESC
          LIMIT 1`, [String(idEvento)]
     );
-    if (rows.length === 0) {
-        throw new Error(`No se encontró fecha_evento en la base de datos para el evento ${idEvento}.`);
-    }
-    return rows[0];
+    return rows[0] ?? null;
 }
 
 async function marcarEventoCancelado(idEvento) {
