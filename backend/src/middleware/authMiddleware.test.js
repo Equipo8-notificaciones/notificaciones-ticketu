@@ -1,10 +1,88 @@
+const assert = require('node:assert/strict');
+const test = require('node:test');
+const { crearAuthMiddleware } = require('./authMiddleware');
 
+function crearResponse() {
+    return {
+        statusCode: 200,
+        headers: {},
+        status(code) {
+            this.statusCode = code;
+            return this;
+        },
+        json(body) {
+            this.body = body;
+            return this;
+        },
+        set(name, value) {
+            this.headers[name] = value;
+            return this;
+        }
+    };
+}
+
+test('valida con Auth reenviando la cookie original y asigna el perfil', async () => {
+    const originalUrl = process.env.AUTH_SERVICE_URL;
+    const originalTimeout = process.env.AUTH_TIMEOUT_MS;
+    const originalApiKey = process.env.INTERNAL_API_KEY;
+    process.env.AUTH_SERVICE_URL = 'http://auth.test:4000';
+    process.env.AUTH_TIMEOUT_MS = '1200';
+    process.env.INTERNAL_API_KEY = 'clave-interna-test';
+
+    try {
+        let llamada;
+        const middleware = crearAuthMiddleware(async (url, options) => {
+            llamada = { url, options };
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    valido: true,
+                    usuario: { id_usuario: 'usuario-auth', rol: 'usuario' }
+                })
+            };
+        });
+        const req = { headers: { cookie: 'otra=valor; jwt=token-original' } };
+        const res = crearResponse();
+        let siguiente = false;
+
+        await middleware(req, res, () => { siguiente = true; });
+
+        assert.equal(llamada.url, 'http://auth.test:4000/internal/validar-sesion');
+        assert.equal(llamada.options.method, 'GET');
+        assert.equal(llamada.options.headers.Cookie, 'otra=valor; jwt=token-original');
+        assert.equal(llamada.options.headers['x-api-key'], 'clave-interna-test');
+        assert.ok(llamada.options.signal instanceof AbortSignal);
+        assert.deepEqual(req.user, { id_usuario: 'usuario-auth', rol: 'usuario' });
+        assert.equal(res.headers['Cache-Control'], 'no-store');
+        assert.equal(siguiente, true);
+    } finally {
+        if (originalUrl === undefined) delete process.env.AUTH_SERVICE_URL;
+        else process.env.AUTH_SERVICE_URL = originalUrl;
+        if (originalTimeout === undefined) delete process.env.AUTH_TIMEOUT_MS;
+        else process.env.AUTH_TIMEOUT_MS = originalTimeout;
+        if (originalApiKey === undefined) delete process.env.INTERNAL_API_KEY;
+        else process.env.INTERNAL_API_KEY = originalApiKey;
+    }
+});
+
+test('rechaza una cookie ausente o sin jwt sin consultar Auth', async () => {
+    let consultas = 0;
+    const middleware = crearAuthMiddleware(async () => { consultas++; });
+
+    for (const cookie of [undefined, 'otra=valor', 'jwt_token=legacy-token', 'jwt=']) {
+        const res = crearResponse();
+        await middleware({ headers: { cookie } }, res, () => assert.fail('No debe continuar'));
+        assert.equal(res.statusCode, 401);
+    }
     assert.equal(consultas, 0);
 });
 
 test('propaga respuestas 401 y 403 de Auth', async () => {
     const originalUrl = process.env.AUTH_SERVICE_URL;
+    const originalApiKey = process.env.INTERNAL_API_KEY;
     process.env.AUTH_SERVICE_URL = 'http://auth.test';
+    process.env.INTERNAL_API_KEY = 'clave-interna-test';
 
     try {
         for (const status of [401, 403]) {
@@ -16,12 +94,16 @@ test('propaga respuestas 401 y 403 de Auth', async () => {
     } finally {
         if (originalUrl === undefined) delete process.env.AUTH_SERVICE_URL;
         else process.env.AUTH_SERVICE_URL = originalUrl;
+        if (originalApiKey === undefined) delete process.env.INTERNAL_API_KEY;
+        else process.env.INTERNAL_API_KEY = originalApiKey;
     }
 });
 
 test('responde 503 si Auth no está disponible y 502 ante un perfil inválido', async () => {
     const originalUrl = process.env.AUTH_SERVICE_URL;
+    const originalApiKey = process.env.INTERNAL_API_KEY;
     process.env.AUTH_SERVICE_URL = 'http://auth.test';
+    process.env.INTERNAL_API_KEY = 'clave-interna-test';
 
     try {
         const noDisponible = crearAuthMiddleware(async () => { throw new Error('connection refused'); });
@@ -40,17 +122,7 @@ test('responde 503 si Auth no está disponible y 502 ante un perfil inválido', 
     } finally {
         if (originalUrl === undefined) delete process.env.AUTH_SERVICE_URL;
         else process.env.AUTH_SERVICE_URL = originalUrl;
+        if (originalApiKey === undefined) delete process.env.INTERNAL_API_KEY;
+        else process.env.INTERNAL_API_KEY = originalApiKey;
     }
 });
-
-error.handler:
-function errorHandler(err, req, res, next) {
-    console.error(err);
-
-    const status = err.statusCode || 500;
-    res.status(status).json({
-        error: err.message || 'Error interno del servidor'
-    });
-}
-
-module.exports = errorHandler;
