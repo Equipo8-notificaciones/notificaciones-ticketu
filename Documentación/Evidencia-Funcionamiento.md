@@ -10,13 +10,10 @@ Cambio de Evento(Panel): usuario
 <img width="940" height="510" alt="image" src="https://github.com/user-attachments/assets/810e34b1-2285-40e2-804c-cc44015106c4" />
 
 Confirmación de Lectura:
-<img width="940" height="259" alt="image" src="https://github.com/user-attachments/assets/e892b911-9f85-468b-a6ca-8ab8d284982a" />
-
-Confirmación de Lectura:
-<img width="940" height="509" alt="image" src="https://github.com/user-attachments/assets/bf3693d7-1f84-45a5-bfa5-182934984db1" />
+<img width="940" height="509" alt="image" src="https://github.com/user-attachments/assets/fcf74071-9402-423b-8a0b-d8f531a7af44" />
 
 Correo de compra de entrada:
-<img width="921" height="286" alt="image" src="https://github.com/user-attachments/assets/a8ba06b6-656f-424c-ac4e-39a0ceb189b6" />
+<img width="940" height="259" alt="image" src="https://github.com/user-attachments/assets/e892b911-9f85-468b-a6ca-8ab8d284982a" />
 
 Correo cambio de contraseña:
-![Uploading image.png…]()
+<img width="921" height="286" alt="image" src="https://github.com/user-attachments/assets/df10d570-5f25-4524-921e-e1d5e3d1eaa7" />
