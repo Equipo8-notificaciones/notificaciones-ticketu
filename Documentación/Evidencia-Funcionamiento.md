@@ -12,6 +12,9 @@ Cambio de Evento(Panel): usuario
 Confirmación de Lectura:
 <img width="940" height="259" alt="image" src="https://github.com/user-attachments/assets/e892b911-9f85-468b-a6ca-8ab8d284982a" />
 
+Confirmación de Lectura:
+<img width="940" height="509" alt="image" src="https://github.com/user-attachments/assets/bf3693d7-1f84-45a5-bfa5-182934984db1" />
+
 Correo de compra de entrada:
 <img width="921" height="286" alt="image" src="https://github.com/user-attachments/assets/a8ba06b6-656f-424c-ac4e-39a0ceb189b6" />
 
